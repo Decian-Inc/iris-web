@@ -63,7 +63,7 @@ WORKDIR /iriswebapp
 
 COPY docker/webApp/iris-entrypoint.sh .
 COPY docker/webApp/wait-for-iriswebapp.sh .
-COPY source .
+COPY ../source .
 
 # Add execution right to binaries needed by evtx2splunk for iris_evtx module
 RUN chmod +x /iriswebapp/dependencies/evtxdump_binaries/linux/x64/fd

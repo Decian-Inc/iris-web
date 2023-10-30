@@ -33,21 +33,21 @@ name: $(major).$(minor).$(revision)$(Rev:.r)_$(Build.SourceBranchName)
 
 steps:
   - task: Docker@2
-    displayName: Build and push db to container registry
-    inputs:
-      command: buildAndPush
-      repository: 'dx-iris-db'
-      dockerfile: '$(Build.SourcesDirectory)/docker/db/Dockerfile'
-      containerRegistry: $(dockerRegistryServiceConnection)
-      tags: |
-        $(docker_tags)
-
-  - task: Docker@2
     displayName: Build and push webApp to container registry
     inputs:
       command: buildAndPush
       repository: 'dx-iris-web'
       dockerfile: '$(Build.SourcesDirectory)/docker/webApp/Dockerfile'
+      containerRegistry: $(dockerRegistryServiceConnection)
+      tags: |
+        $(docker_tags)
+
+  - task: Docker@2
+    displayName: Build and push db to container registry
+    inputs:
+      command: buildAndPush
+      repository: 'dx-iris-db'
+      dockerfile: '$(Build.SourcesDirectory)/docker/db/Dockerfile'
       containerRegistry: $(dockerRegistryServiceConnection)
       tags: |
         $(docker_tags)
