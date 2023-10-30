@@ -20,7 +20,7 @@ variables:
   # Container registry service connection established during pipeline creation
   dockerRegistryServiceConnection: 'DecianX Docker Registry (nexus-registry.decian.net)'
 
-  ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
+  ${{ if eq(variables['Build.SourceBranchName'], 'master') }}:
     docker_tags: |
       latest
       $(major)
@@ -43,6 +43,16 @@ steps:
       includeLatestTag: true
       additionalArguments: '--parallel'
       
+- task: DockerCompose@0
+  displayName: 'docker-compose push'
+  inputs:
+    containerregistrytype: 'Container Registry'
+    dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+    dockerComposeFile: 'docker-compose.yml'
+    action: 'Push services'
+    additionalImageTags: '$(docker_tags)'
+    includeLatestTag: true
+    additionalArguments: '--parallel'
   # - task: Docker@2
   #   displayName: Build and push webApp to container registry
   #   inputs:
