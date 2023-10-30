@@ -95,7 +95,7 @@ steps:
       repository: 'dx-iris-nginx'
       dockerfile: '$(Build.SourcesDirectory)/docker/nginx/Dockerfile'
       buildContext: './docker/nginx'
-      arguments: 'NGINX_CONF_GID=1234 NGINX_CONF_FILE=nginx.conf'
+      arguments: '--build-arg NGINX_CONF_GID=1234 --build-arg NGINX_CONF_FILE=nginx.conf'
       tags: |
         $(docker_tags)
 
