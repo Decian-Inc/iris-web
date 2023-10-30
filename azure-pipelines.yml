@@ -37,7 +37,7 @@ steps:
     inputs:
       command: buildAndPush
       repository: 'dx-iris-db'
-      dockerfile: '$(Build.SourcesDirectory)/db/Dockerfile'
+      dockerfile: '$(Build.SourcesDirectory)/docker/db/Dockerfile'
       containerRegistry: $(dockerRegistryServiceConnection)
       tags: |
         $(docker_tags)
@@ -47,7 +47,7 @@ steps:
     inputs:
       command: buildAndPush
       repository: 'dx-iris-nginx'
-      dockerfile: '$(Build.SourcesDirectory)/nginx/Dockerfile'
+      dockerfile: '$(Build.SourcesDirectory)/docker/nginx/Dockerfile'
       containerRegistry: $(dockerRegistryServiceConnection)
       tags: |
         $(docker_tags)
@@ -57,8 +57,7 @@ steps:
     inputs:
       command: buildAndPush
       repository: 'dx-iris-web'
-      dockerfile: '$(Build.SourcesDirectory)/webApp/Dockerfile'
+      dockerfile: '$(Build.SourcesDirectory)/docker/webApp/Dockerfile'
       containerRegistry: $(dockerRegistryServiceConnection)
       tags: |
         $(docker_tags)
-        
