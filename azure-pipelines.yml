@@ -37,7 +37,7 @@ steps:
     inputs:
       containerregistrytype: 'Container Registry'
       dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
-      dockerComposeFile: 'docker-compose.yml'
+      dockerComposeFile: 'docker-compose-build.yml'
       action: 'Build services'
       additionalImageTags: '$(docker_tags)'
       includeLatestTag: true
@@ -53,6 +53,7 @@ steps:
       additionalImageTags: '$(docker_tags)'
       includeLatestTag: true
       additionalArguments: '--parallel'
+
   # - task: Docker@2
   #   displayName: Build and push webApp to container registry
   #   inputs:
