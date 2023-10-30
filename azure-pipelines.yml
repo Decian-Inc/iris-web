@@ -43,21 +43,21 @@ steps:
         $(docker_tags)
 
   - task: Docker@2
-    displayName: Build and push nginx to container registry
-    inputs:
-      command: buildAndPush
-      repository: 'dx-iris-nginx'
-      dockerfile: '$(Build.SourcesDirectory)/docker/nginx/Dockerfile'
-      containerRegistry: $(dockerRegistryServiceConnection)
-      tags: |
-        $(docker_tags)
-
-  - task: Docker@2
     displayName: Build and push webApp to container registry
     inputs:
       command: buildAndPush
       repository: 'dx-iris-web'
       dockerfile: '$(Build.SourcesDirectory)/docker/webApp/Dockerfile'
+      containerRegistry: $(dockerRegistryServiceConnection)
+      tags: |
+        $(docker_tags)
+
+  - task: Docker@2
+    displayName: Build and push nginx to container registry
+    inputs:
+      command: buildAndPush
+      repository: 'dx-iris-nginx'
+      dockerfile: '$(Build.SourcesDirectory)/docker/nginx/Dockerfile'
       containerRegistry: $(dockerRegistryServiceConnection)
       tags: |
         $(docker_tags)
