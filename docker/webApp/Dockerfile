@@ -59,7 +59,7 @@ RUN mkdir -p /home/iris/server_data/updates
 RUN mkdir -p /home/iris/server_data/custom_assets
 RUN mkdir -p /home/iris/server_data/datastore
 
-WORKDIR /iriswebapp
+WORKDIR /iris-web
 
 COPY docker/webApp/iris-entrypoint.sh .
 COPY docker/webApp/wait-for-iriswebapp.sh .
