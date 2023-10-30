@@ -39,6 +39,7 @@ steps:
       repository: 'dx-iris-web'
       dockerfile: '$(Build.SourcesDirectory)/docker/webApp/Dockerfile'
       containerRegistry: $(dockerRegistryServiceConnection)
+      context: .
       tags: |
         $(docker_tags)
 
