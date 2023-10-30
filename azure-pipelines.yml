@@ -32,55 +32,57 @@ variables:
 name: $(major).$(minor).$(revision)$(Rev:.r)_$(Build.SourceBranchName)
 
 steps:
-  - task: DockerCompose@0
-    displayName: 'docker-compose build'
+  # - task: DockerCompose@0
+  #   displayName: 'docker-compose build'
+  #   inputs:
+  #     containerregistrytype: 'Container Registry'
+  #     dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+  #     dockerComposeFile: 'docker-compose-build.yml'
+  #     action: 'Build services'
+  #     additionalImageTags: '$(docker_tags)'
+  #     includeLatestTag: true
+  #     additionalArguments: '--parallel'
+
+  # - task: DockerCompose@0
+  #   displayName: 'docker-compose push'
+  #   inputs:
+  #     containerregistrytype: 'Container Registry'
+  #     dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+  #     dockerComposeFile: 'docker-compose.yml'
+  #     action: 'Push services'
+  #     additionalImageTags: '$(docker_tags)'
+  #     includeLatestTag: true
+  #     additionalArguments: '--parallel'
+
+  - task: Docker@2
+    displayName: Build and push webApp to container registry
     inputs:
-      containerregistrytype: 'Container Registry'
-      dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
-      dockerComposeFile: 'docker-compose-build.yml'
-      action: 'Build services'
-      additionalImageTags: '$(docker_tags)'
-      includeLatestTag: true
-      additionalArguments: '--parallel'
+      command: buildAndPush
+      repository: 'dx-iris-web'
+      dockerfile: '$(Build.SourcesDirectory)/docker/webApp/Dockerfile'
+      containerRegistry: $(dockerRegistryServiceConnection)
+      buildContext: .
+      tags: |
+        $(docker_tags)
 
-  - task: DockerCompose@0
-    displayName: 'docker-compose push'
+  - task: Docker@2
+    displayName: Build and push db to container registry
     inputs:
-      containerregistrytype: 'Container Registry'
-      dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
-      dockerComposeFile: 'docker-compose.yml'
-      action: 'Push services'
-      additionalImageTags: '$(docker_tags)'
-      includeLatestTag: true
-      additionalArguments: '--parallel'
+      command: buildAndPush
+      repository: 'dx-iris-db'
+      dockerfile: '$(Build.SourcesDirectory)/docker/db/Dockerfile'
+      containerRegistry: $(dockerRegistryServiceConnection)
+      buildContext: ./docker/db
+      tags: |
+        $(docker_tags)
 
-  # - task: Docker@2
-  #   displayName: Build and push webApp to container registry
-  #   inputs:
-  #     command: buildAndPush
-  #     repository: 'dx-iris-web'
-  #     dockerfile: '$(Build.SourcesDirectory)/docker/webApp/Dockerfile'
-  #     containerRegistry: $(dockerRegistryServiceConnection)
-  #     context: .
-  #     tags: |
-  #       $(docker_tags)
-
-  # - task: Docker@2
-  #   displayName: Build and push db to container registry
-  #   inputs:
-  #     command: buildAndPush
-  #     repository: 'dx-iris-db'
-  #     dockerfile: '$(Build.SourcesDirectory)/docker/db/Dockerfile'
-  #     containerRegistry: $(dockerRegistryServiceConnection)
-  #     tags: |
-  #       $(docker_tags)
-
-  # - task: Docker@2
-  #   displayName: Build and push nginx to container registry
-  #   inputs:
-  #     command: buildAndPush
-  #     repository: 'dx-iris-nginx'
-  #     dockerfile: '$(Build.SourcesDirectory)/docker/nginx/Dockerfile'
-  #     containerRegistry: $(dockerRegistryServiceConnection)
-  #     tags: |
-  #       $(docker_tags)
+  - task: Docker@2
+    displayName: Build and push nginx to container registry
+    inputs:
+      command: buildAndPush
+      repository: 'dx-iris-nginx'
+      dockerfile: '$(Build.SourcesDirectory)/docker/nginx/Dockerfile'
+      containerRegistry: $(dockerRegistryServiceConnection)
+      buildContext: ./docker/nginx
+      tags: |
+        $(docker_tags)
