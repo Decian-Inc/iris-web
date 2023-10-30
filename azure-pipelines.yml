@@ -58,7 +58,7 @@ steps:
     displayName: Build and push webApp to container registry
     inputs:
       command: buildAndPush
-      repository: 'dx-iris-web'
+      repository: 'dx-iris-app'
       dockerfile: '$(Build.SourcesDirectory)/docker/webApp/Dockerfile'
       containerRegistry: $(dockerRegistryServiceConnection)
       buildContext: .
@@ -76,14 +76,34 @@ steps:
       tags: |
         $(docker_tags)
 
+  # - task: Docker@2
+  #   displayName: Build and push nginx to container registry
+  #   inputs:
+  #     command: buildAndPush
+  #     repository: 'dx-iris-nginx'
+  #     dockerfile: '$(Build.SourcesDirectory)/docker/nginx/Dockerfile'
+  #     containerRegistry: $(dockerRegistryServiceConnection)
+  #     buildContext: ./docker/nginx
+  #     arguments: --NGINX_CONF_GID=1234 --NGINX_CONF_FILE=nginx.conf #ignored in buildAndPush
+  #     tags: |
+  #       $(docker_tags)
+
   - task: Docker@2
-    displayName: Build and push nginx to container registry
+    displayName: Build nginx
     inputs:
-      command: buildAndPush
+      command: build
       repository: 'dx-iris-nginx'
       dockerfile: '$(Build.SourcesDirectory)/docker/nginx/Dockerfile'
+      buildContext: './docker/nginx'
+      arguments: '--NGINX_CONF_GID=1234 --NGINX_CONF_FILE=nginx.conf'
+      tags: |
+        $(docker_tags)
+
+  - task: Docker@2
+    displayName: Push nginx
+    inputs:
+      command: push
+      repository: 'dx-iris-nginx'
       containerRegistry: $(dockerRegistryServiceConnection)
-      buildContext: ./docker/nginx
-      arguments: --NGINX_CONF_GID=1234 --NGINX_CONF_FILE=nginx.conf
       tags: |
         $(docker_tags)
