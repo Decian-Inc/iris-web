@@ -1,0 +1,64 @@
+# Docker
+# Build and push an image to Azure Container Registry
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+trigger:
+- main
+
+resources:
+- repo: self
+
+pool:
+  vmImage: ubuntu-22.04
+
+variables:
+  # Version
+  major: 2
+  minor: 0
+  revision: $[ counter(format('{0}.{1}.{2}', variables['major'], variables['minor'], variables['Build.SourceBranchName']), 0) ]
+  versionStr: $(major).$(minor).$(revision)
+  # Container registry service connection established during pipeline creation
+  dockerRegistryServiceConnection: 'DecianX Docker Registry (nexus-registry.decian.net)'
+
+  ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
+    docker_tags: |
+      latest
+      $(major)
+      $(major).$(minor)
+      $(major).$(minor).$(revision)
+  ${{ else }}:
+    docker_tags: |
+      branch_$(major).$(minor).$(revision)
+name: $(major).$(minor).$(revision)$(Rev:.r)_$(Build.SourceBranchName)
+
+steps:
+  - task: Docker@2
+    displayName: Build and push db to container registry
+    inputs:
+      command: buildAndPush
+      repository: 'dx-iris-db'
+      dockerfile: '$(Build.SourcesDirectory)/db/Dockerfile'
+      containerRegistry: $(dockerRegistryServiceConnection)
+      tags: |
+        $(docker_tags)
+
+  - task: Docker@2
+    displayName: Build and push nginx to container registry
+    inputs:
+      command: buildAndPush
+      repository: 'dx-iris-nginx'
+      dockerfile: '$(Build.SourcesDirectory)/nginx/Dockerfile'
+      containerRegistry: $(dockerRegistryServiceConnection)
+      tags: |
+        $(docker_tags)
+
+  - task: Docker@2
+    displayName: Build and push webApp to container registry
+    inputs:
+      command: buildAndPush
+      repository: 'dx-iris-web'
+      dockerfile: '$(Build.SourcesDirectory)/webApp/Dockerfile'
+      containerRegistry: $(dockerRegistryServiceConnection)
+      tags: |
+        $(docker_tags)
+        
