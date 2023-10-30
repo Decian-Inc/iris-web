@@ -96,8 +96,8 @@ steps:
       dockerfile: '$(Build.SourcesDirectory)/docker/nginx/Dockerfile'
       buildContext: './docker/nginx'
       arguments:
-        NGINX_CONF_GID: 1234
-        NGINX_CONF_FILE: nginx.conf
+        - NGINX_CONF_GID: 1234
+        - NGINX_CONF_FILE: nginx.conf
       tags: |
         $(docker_tags)
 
