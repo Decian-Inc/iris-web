@@ -19,4 +19,4 @@
 
 FROM postgres:12-alpine
 
-COPY create_user.sh   /docker-entrypoint-initdb.d/10-create_user.sh
+# COPY create_user.sh   /docker-entrypoint-initdb.d/10-create_user.sh
