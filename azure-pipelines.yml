@@ -75,26 +75,3 @@ steps:
       containerRegistry: $(dockerRegistryServiceConnection)
       tags: |
         $(docker_tags)
-  
-  # Experimental DockerCompose Version - requires docker-compose-build.yml
-  # - task: DockerCompose@0
-  #   displayName: 'docker-compose build'
-  #   inputs:
-  #     containerregistrytype: 'Container Registry'
-  #     dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
-  #     dockerComposeFile: 'docker-compose-build.yml'
-  #     action: 'Build services'
-  #     additionalImageTags: '$(docker_tags)'
-  #     includeLatestTag: true
-  #     additionalArguments: '--parallel'
-
-  # - task: DockerCompose@0
-  #   displayName: 'docker-compose push'
-  #   inputs:
-  #     containerregistrytype: 'Container Registry'
-  #     dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
-  #     dockerComposeFile: 'docker-compose.yml'
-  #     action: 'Push services'
-  #     additionalImageTags: '$(docker_tags)'
-  #     includeLatestTag: true
-  #     additionalArguments: '--parallel'
