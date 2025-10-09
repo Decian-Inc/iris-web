@@ -1,6 +1,6 @@
 
 <p align="center">
-    <img src="source/app/static/assets/img/logo.ico" />
+  <h1>Decian</h1>
 </p>
 
 <p align="center">
@@ -11,10 +11,10 @@
   <a href="https://v200.beta.dfir-iris.org">Online Demonstration</a>
 </p>
 
-# IRIS
+# Decian
 
-[![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](./LICENSE.txt)   
-Iris is a web collaborative platform aiming to help incident responders sharing technical details during investigations. 
+[![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](./LICENSE.txt)
+Decian is a web collaborative platform aiming to help incident responders sharing technical details during investigations. 
 
 ![demo_timeline](img/timeline_speed.gif)
 
