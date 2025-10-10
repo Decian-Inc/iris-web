@@ -1,0 +1,32 @@
+Metadata-Version: 2.4
+Name: iris_urlscan_module
+Version: 1.0.0
+Summary: IRIS URLScan.io integration module for URL threat intelligence with screenshot capture
+Home-page: https://github.com/decian/iris-urlscan-module
+Author: Decian
+Author-email: contact@decian.org
+Keywords: iris,threat intelligence,url analysis,urlscan,cybersecurity,incident response,screenshot
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)
+Classifier: Operating System :: OS Independent
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Information Technology
+Classifier: Topic :: Security
+Classifier: Topic :: Internet :: WWW/HTTP :: Indexing/Search
+Classifier: Topic :: System :: Monitoring
+Requires-Python: >=3.8
+Description-Content-Type: text/plain
+Requires-Dist: requests>=2.25.0
+Requires-Dist: iris_interface
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+Provides comprehensive URL analysis using URLScan.io for domains and URLs with automatic screenshot capture, verdict analysis, geolocation data, and report generation in IRIS Notes section.

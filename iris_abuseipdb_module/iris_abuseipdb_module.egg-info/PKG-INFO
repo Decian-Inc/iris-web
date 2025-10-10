@@ -1,0 +1,28 @@
+Metadata-Version: 2.4
+Name: iris_abuseipdb_module
+Version: 1.0.0
+Summary: IRIS AbuseIPDB integration module
+Author: Decian
+Author-email: contact@decian.org
+License: LGPL-3.0
+Keywords: iris,abuseipdb,threat intelligence,security
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.8
+Requires-Dist: requests>=2.25.0
+Requires-Dist: iris_interface
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: keywords
+Dynamic: license
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
