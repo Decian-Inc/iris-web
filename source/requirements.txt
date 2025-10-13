@@ -54,3 +54,4 @@ dependencies/iris_seika_module-1.0.0-py3-none-any.whl
 dependencies/iris_abuseipdb_module-1.0.0-py3-none-any.whl
 dependencies/iris_hybrid_analysis_module-1.0.0-py3-none-any.whl
 dependencies/iris_urlscan_module-1.0.0-py3-none-any.whl
+dependencies/iris_otx_module-1.0.0-py3-none-any.whl

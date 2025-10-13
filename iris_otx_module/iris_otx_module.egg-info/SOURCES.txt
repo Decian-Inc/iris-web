@@ -1,0 +1,11 @@
+setup.py
+./IrisOTXConfig.py
+./IrisOTXInterface.py
+./__init__.py
+./otx_handler/__init__.py
+./otx_handler/otx_handler.py
+iris_otx_module.egg-info/PKG-INFO
+iris_otx_module.egg-info/SOURCES.txt
+iris_otx_module.egg-info/dependency_links.txt
+iris_otx_module.egg-info/requires.txt
+iris_otx_module.egg-info/top_level.txt

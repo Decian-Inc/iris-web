@@ -1,0 +1,25 @@
+Metadata-Version: 2.4
+Name: iris_otx_module
+Version: 1.0.0
+Summary: AlienVault OTX module for IRIS
+Home-page: https://github.com/decian-eu/iris-otx-module
+Author: Decian
+Author-email: contact@decian.org
+License: LGPL v3
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Requires-Dist: requests>=2.25.0
+Requires-Dist: iris_interface
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: home-page
+Dynamic: license
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+Provides AlienVault OTX enrichment for IRIS IOCs with automatic report generation

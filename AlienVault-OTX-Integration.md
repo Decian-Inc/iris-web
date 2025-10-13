@@ -1,0 +1,7 @@
+The OTX integration shall enrich IRIS cases and observables by querying the AlienVault OTX v2 API for pulse and indicator data (pulse_id, name, description, tags, TLP, author, pulse_count, indicators list, first_seen/last_seen, references, malware_family) .
+
+It shall support on-demand lookups when an IOC is ingested and a scheduled daily/near-real-time sync to a local cache/index for fast matching, compute a default severity weight from pulse_count/author reputation/tags, map pulse tags → DFIR playbook selection, and expose searchable fields so analysts can pivot from the case to the pulse writeup and referenced artifacts.
+
+The integration must respect TLP and API limits (caching/backoff), provide provenance metadata (fetched_on, fetched_from, api_key_id), allow analyst annotations/overrides, and require corroboration from at least one additional trusted source (e.g., VirusTotal, AbuseIPDB, GreyNoise) before any automated blocking or quarantine action is taken.
+
+Lastly the query to IRIS, must generate a nice, clean, organized report in the "Notes" section of IRIS. Each time a report is made, a new folder is created, and the report, will be stored in that folder called AlienVault OTX Report <date time>. The report will also need to be in a human readbale format and not just json.
