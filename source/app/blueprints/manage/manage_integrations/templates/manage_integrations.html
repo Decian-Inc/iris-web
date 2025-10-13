@@ -1,0 +1,419 @@
+{% extends "layouts/default.html" %}
+
+{% block title %} Manage Integrations {% endblock title %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="/static/assets/css/select2.css">
+    <style>
+        .integration-card {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .integration-header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            border-radius: 8px 8px 0 0;
+        }
+        .integration-body {
+            padding: 20px;
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .status-enabled {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-disabled {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .test-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .integration-icon {
+            font-size: 2em;
+            margin-right: 15px;
+        }
+        .velociraptor-icon {
+            color: #e74c3c;
+        }
+        .sentinelone-icon {
+            color: #3498db;
+        }
+    </style>
+{% endblock stylesheets %}
+
+{% block content %}
+    {% if current_user.is_authenticated %}
+        {% include 'includes/navigation.html' %}
+        {% include 'includes/sidenav.html' %}
+
+        <div class="main-panel">
+            <div class="content">
+                <div class="page-inner">
+                    <div class="page-header">
+                        <h3 class="fw-bold mb-3"><i class="fas fa-plug mr-2"></i>Manage Integrations</h3>
+                        <ul class="breadcrumbs mb-3">
+                            <li class="nav-home">
+                                <a href="{{ url_for('index.index') }}">
+                                    <i class="flaticon-home"></i>
+                                </a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">Manage</a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">Integrations</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">SOAR Integration Settings</h4>
+                                    <p class="card-category">Configure third-party integrations for automated response actions</p>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Velociraptor Integration -->
+                                    <div class="integration-card">
+                                        <div class="integration-header">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-dragon velociraptor-icon integration-icon"></i>
+                                                    <div>
+                                                        <h5 class="mb-1">Velociraptor</h5>
+                                                        <small class="text-muted">Digital forensics and incident response platform</small>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <span class="status-badge {% if integrations.velociraptor.enabled %}status-enabled{% else %}status-disabled{% endif %}">
+                                                        {% if integrations.velociraptor.enabled %}Enabled{% else %}Disabled{% endif %}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="integration-body">
+                                            <form id="velociraptor-form">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Enable Integration</label>
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="vr-enabled"
+                                                                       {% if integrations.velociraptor.enabled %}checked{% endif %}>
+                                                                <label class="form-check-label" for="vr-enabled">
+                                                                    Enable Velociraptor integration
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="vr-base-url">Base URL <span class="text-danger">*</span></label>
+                                                            <input type="url" class="form-control" id="vr-base-url"
+                                                                   placeholder="https://velociraptor.example.com:8000"
+                                                                   value="{{ integrations.velociraptor.base_url }}">
+                                                            <small class="form-text text-muted">The base URL of your Velociraptor server</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="vr-api-key">API Key <span class="text-danger">*</span></label>
+                                                            <input type="password" class="form-control" id="vr-api-key"
+                                                                   placeholder="Enter API key"
+                                                                   value="{{ integrations.velociraptor.api_key }}">
+                                                            <small class="form-text text-muted">API key for authentication</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="vr-ca-cert">CA Certificate (Optional)</label>
+                                                            <textarea class="form-control" id="vr-ca-cert" rows="3"
+                                                                      placeholder="-----BEGIN CERTIFICATE-----">{{ integrations.velociraptor.ca_cert }}</textarea>
+                                                            <small class="form-text text-muted">Custom CA certificate for SSL verification</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="vr-verify-ssl"
+                                                                       {% if integrations.velociraptor.verify_ssl %}checked{% endif %}>
+                                                                <label class="form-check-label" for="vr-verify-ssl">
+                                                                    Verify SSL certificates
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <button type="button" class="btn btn-info btn-sm" onclick="testConnection('velociraptor')">
+                                                                <i class="fas fa-plug mr-1"></i>Test Connection
+                                                            </button>
+                                                            <button type="button" class="btn btn-success btn-sm ml-2" onclick="saveConfig('velociraptor')">
+                                                                <i class="fas fa-save mr-1"></i>Save Configuration
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="vr-test-result" class="test-result" style="display: none;"></div>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    <!-- SentinelOne Integration -->
+                                    <div class="integration-card">
+                                        <div class="integration-header">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-shield-alt sentinelone-icon integration-icon"></i>
+                                                    <div>
+                                                        <h5 class="mb-1">SentinelOne</h5>
+                                                        <small class="text-muted">Autonomous cybersecurity platform</small>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <span class="status-badge {% if integrations.sentinelone.enabled %}status-enabled{% else %}status-disabled{% endif %}">
+                                                        {% if integrations.sentinelone.enabled %}Enabled{% else %}Disabled{% endif %}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="integration-body">
+                                            <form id="sentinelone-form">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Enable Integration</label>
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="s1-enabled"
+                                                                       {% if integrations.sentinelone.enabled %}checked{% endif %}>
+                                                                <label class="form-check-label" for="s1-enabled">
+                                                                    Enable SentinelOne integration
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="s1-base-url">Console URL <span class="text-danger">*</span></label>
+                                                            <input type="url" class="form-control" id="s1-base-url"
+                                                                   placeholder="https://console.sentinelone.net"
+                                                                   value="{{ integrations.sentinelone.base_url }}">
+                                                            <small class="form-text text-muted">The URL of your SentinelOne management console</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="s1-api-token">API Token <span class="text-danger">*</span></label>
+                                                            <input type="password" class="form-control" id="s1-api-token"
+                                                                   placeholder="Enter API token"
+                                                                   value="{{ integrations.sentinelone.api_token }}">
+                                                            <small class="form-text text-muted">API token for authentication</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="s1-site-id">Site ID (Optional)</label>
+                                                            <input type="text" class="form-control" id="s1-site-id"
+                                                                   placeholder="Enter site ID"
+                                                                   value="{{ integrations.sentinelone.site_id }}">
+                                                            <small class="form-text text-muted">Specific site ID for operations</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="s1-verify-ssl"
+                                                                       {% if integrations.sentinelone.verify_ssl %}checked{% endif %}>
+                                                                <label class="form-check-label" for="s1-verify-ssl">
+                                                                    Verify SSL certificates
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <button type="button" class="btn btn-info btn-sm" onclick="testConnection('sentinelone')">
+                                                                <i class="fas fa-plug mr-1"></i>Test Connection
+                                                            </button>
+                                                            <button type="button" class="btn btn-success btn-sm ml-2" onclick="saveConfig('sentinelone')">
+                                                                <i class="fas fa-save mr-1"></i>Save Configuration
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="s1-test-result" class="test-result" style="display: none;"></div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+function testConnection(integrationType) {
+    const config = getConfigFromForm(integrationType);
+    const resultDiv = document.getElementById(`${integrationType === 'velociraptor' ? 'vr' : 's1'}-test-result`);
+
+    // Show loading state
+    resultDiv.style.display = 'block';
+    resultDiv.className = 'test-result';
+    resultDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing connection...';
+
+    fetch('/manage/integrations/test', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            integration_type: integrationType,
+            config: config
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success' && data.data && data.data.success) {
+            resultDiv.className = 'test-result test-success';
+            resultDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${data.data.message}`;
+            if (data.data.server_version) {
+                resultDiv.innerHTML += `<br><small>Server Version: ${data.data.server_version}</small>`;
+            }
+            if (data.data.account_name) {
+                resultDiv.innerHTML += `<br><small>Account: ${data.data.account_name}</small>`;
+            }
+            if (data.data.response_time) {
+                resultDiv.innerHTML += `<br><small>Response Time: ${data.data.response_time}</small>`;
+            }
+        } else {
+            resultDiv.className = 'test-result test-error';
+            const message = data.data ? data.data.message : data.message;
+            resultDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+        }
+    })
+    .catch(error => {
+        resultDiv.className = 'test-result test-error';
+        resultDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> Connection test failed: ${error.message}`;
+    });
+}
+
+function saveConfig(integrationType) {
+    const config = getConfigFromForm(integrationType);
+
+    fetch('/manage/integrations/save', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            integration_type: integrationType,
+            config: config
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification('success', 'Configuration Saved', data.message);
+            // Update status badge
+            updateStatusBadge(integrationType, config.enabled);
+        } else {
+            showNotification('error', 'Save Failed', data.message);
+        }
+    })
+    .catch(error => {
+        showNotification('error', 'Save Failed', error.message);
+    });
+}
+
+function getConfigFromForm(integrationType) {
+    if (integrationType === 'velociraptor') {
+        return {
+            enabled: document.getElementById('vr-enabled').checked,
+            base_url: document.getElementById('vr-base-url').value,
+            api_key: document.getElementById('vr-api-key').value,
+            ca_cert: document.getElementById('vr-ca-cert').value,
+            verify_ssl: document.getElementById('vr-verify-ssl').checked
+        };
+    } else if (integrationType === 'sentinelone') {
+        return {
+            enabled: document.getElementById('s1-enabled').checked,
+            base_url: document.getElementById('s1-base-url').value,
+            api_token: document.getElementById('s1-api-token').value,
+            site_id: document.getElementById('s1-site-id').value,
+            verify_ssl: document.getElementById('s1-verify-ssl').checked
+        };
+    }
+}
+
+function updateStatusBadge(integrationType, enabled) {
+    const badge = document.querySelector(`#${integrationType === 'velociraptor' ? 'vr' : 's1'}-status`);
+    if (badge) {
+        badge.className = `status-badge ${enabled ? 'status-enabled' : 'status-disabled'}`;
+        badge.textContent = enabled ? 'Enabled' : 'Disabled';
+    }
+}
+
+function showNotification(type, title, message) {
+    // Create Bootstrap alert notification
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const icon = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
+
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+            <strong><i class="${icon} mr-2"></i>${title}:</strong> ${message}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+    `);
+
+    $('body').append(notification);
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(function() {
+        notification.alert('close');
+    }, 5000);
+}
+</script>
+{% endblock javascripts %}
