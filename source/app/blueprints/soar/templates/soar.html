@@ -1,0 +1,647 @@
+{% extends "layouts/default_ext.html" %} {% block title %} SOAR {% endblock title %}
+{% block stylesheets %}
+{% include 'includes/header_case.html' %}
+<link rel="stylesheet" href="/static/assets/css/select2.css">
+<link rel="stylesheet" href="/static/assets/css/bootstrap-multiselect.min.css">
+<link rel="stylesheet" href="/static/assets/css/bootstrap-select.min.css">
+<style>
+.soar-container {
+    margin-top: 20px;
+}
+.job-template-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.job-template-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.job-template-card.selected {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+}
+.template-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background-color: #e9ecef;
+    border-radius: 12px;
+    font-size: 0.8em;
+    margin-right: 5px;
+}
+.template-tag.containment { background-color: #fff3cd; color: #856404; }
+.template-tag.forensics { background-color: #d1ecf1; color: #0c5460; }
+.template-tag.triage { background-color: #d4edda; color: #155724; }
+.job-status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: bold;
+}
+.job-status.queued { background-color: #cce5ff; color: #004085; }
+.job-status.running { background-color: #fff3cd; color: #856404; }
+.job-status.completed { background-color: #d4edda; color: #155724; }
+.job-status.failed { background-color: #f8d7da; color: #721c24; }
+.step-timeline {
+    border-left: 3px solid #e9ecef;
+    padding-left: 20px;
+    margin-left: 10px;
+}
+.step-item {
+    position: relative;
+    padding-bottom: 20px;
+}
+.step-item:before {
+    content: '';
+    position: absolute;
+    left: -26px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+}
+.step-item.completed:before { background-color: #28a745; }
+.step-item.running:before { background-color: #ffc107; }
+.step-item.failed:before { background-color: #dc3545; }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+{% if current_user.is_authenticated %}
+
+{% include 'includes/navigation_ext.html' %}
+{% include 'includes/sidenav.html' %}
+
+<div class="main-panel">
+    <div class="content">
+        <!-- Case Header -->
+        <div class="panel-header bg-info-gradient">
+            <div class="page-inner py-5">
+                <div class="d-flex align-items-left align-items-md-center flex-column flex-md-row mt--3">
+                    <div class="col">
+                        <div class="row">
+                            <div class="col">
+                                <h2 class="text-white pb-2 fw-bold">
+                                    <i class="fas fa-robot mr-2"></i>SOAR - Security Orchestration & Response
+                                </h2>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <h5 class="text-white op-7 mb-1"><b>Case:</b> {{ case.name|unquote }}</h5>
+                                <h5 class="text-white op-7 mb-3"><b>Case ID:</b> #{{ case.case_id }}</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-inner soar-container">
+            <div class="row">
+                <!-- Left Column: Job Catalog -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h4 class="card-title mb-0">
+                                <i class="fas fa-th-list mr-2"></i>Job Templates
+                            </h4>
+                            <button class="btn btn-primary btn-sm" id="btn-create-template">
+                                <i class="fas fa-plus mr-1"></i>Create
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <!-- Filters -->
+                            <div class="mb-3">
+                                <input type="text" class="form-control form-control-sm mb-2"
+                                       id="template-search" placeholder="Search templates...">
+                                <select class="form-control form-control-sm mb-2" id="vendor-filter">
+                                    <option value="">All Vendors</option>
+                                    <option value="SentinelOne">SentinelOne</option>
+                                    <option value="Velociraptor">Velociraptor</option>
+                                </select>
+                                <select class="form-control form-control-sm" id="category-filter">
+                                    <option value="">All Categories</option>
+                                    <option value="containment">Containment</option>
+                                    <option value="forensics">Forensics</option>
+                                    <option value="triage">Triage</option>
+                                </select>
+                            </div>
+
+                            <!-- Template List -->
+                            <div id="templates-list">
+                                <div class="text-center p-3">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading templates...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center Column: Job Configuration -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title mb-0">
+                                <i class="fas fa-cogs mr-2"></i>Job Configuration
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="job-config-panel">
+                                <div class="text-center text-muted p-4">
+                                    <i class="fas fa-mouse-pointer fa-2x mb-2"></i>
+                                    <p>Select a job template to configure and run</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Execution Log & Results -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title mb-0">
+                                <i class="fas fa-clipboard-list mr-2"></i>Job Results
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <!-- Recent Jobs Summary -->
+                            <div class="mb-3">
+                                <h6>Recent Jobs for this Case</h6>
+                                <div id="recent-jobs-list">
+                                    <div class="text-center text-muted p-2">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading jobs...
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Job Details -->
+                            <div id="job-details-panel">
+                                <div class="text-center text-muted p-4">
+                                    <i class="fas fa-play-circle fa-2x mb-2"></i>
+                                    <p>Run a job to see results</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approval Modal -->
+<div class="modal fade" id="approvalModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-shield-alt mr-2"></i>Approval Required
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    This job template requires approval before execution.
+                </div>
+                <form id="approval-form">
+                    <div class="form-group">
+                        <label>Approver</label>
+                        <select class="form-control" id="approver-select" required>
+                            <option value="">Select approver...</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="security-lead">Security Lead</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Justification</label>
+                        <textarea class="form-control" id="approval-reason"
+                                  placeholder="Provide justification for this action..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Urgency Level</label>
+                        <select class="form-control" id="urgency-level" required>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="btn-request-approval">
+                    <i class="fas fa-paper-plane mr-1"></i>Request Approval
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+// Global variables
+let selectedTemplate = null;
+let currentJob = null;
+let caseId = {{ case_id }};
+
+// Initialize SOAR interface
+$(document).ready(function() {
+    loadTemplates();
+    loadRecentJobs();
+
+    // Set up event handlers
+    setupEventHandlers();
+
+    // Auto-refresh job status every 5 seconds
+    setInterval(refreshJobStatus, 5000);
+});
+
+function setupEventHandlers() {
+    // Template selection
+    $(document).on('click', '.job-template-card', function() {
+        $('.job-template-card').removeClass('selected');
+        $(this).addClass('selected');
+
+        let templateId = $(this).data('template-id');
+        selectTemplate(templateId);
+    });
+
+    // Run job button
+    $(document).on('click', '#btn-run-job', function() {
+        runJob();
+    });
+
+    // Create template button
+    $('#btn-create-template').click(function() {
+        // TODO: Implement template creation modal
+        showNotification('Template creation functionality will be available soon', 'info');
+    });
+
+    // Approval modal
+    $('#btn-request-approval').click(function() {
+        requestApproval();
+    });
+
+    // Search and filters
+    $('#template-search, #vendor-filter, #category-filter').on('input change', function() {
+        filterTemplates();
+    });
+}
+
+function loadTemplates() {
+    $.ajax({
+        url: `/soar/templates?cid=${caseId}`,
+        method: 'GET',
+        success: function(response) {
+            if (response.status === 'success') {
+                renderTemplates(response.data);
+            } else {
+                showNotification('Failed to load templates: ' + response.message, 'error');
+            }
+        },
+        error: function() {
+            showNotification('Error loading templates', 'error');
+        }
+    });
+}
+
+function renderTemplates(templates) {
+    let html = '';
+    templates.forEach(template => {
+        let tagsHtml = template.tags.map(tag =>
+            `<span class="template-tag ${tag}">${tag}</span>`
+        ).join('');
+
+        let approvalBadge = template.requires_approval ?
+            '<span class="badge badge-warning badge-sm ml-2">Approval Required</span>' : '';
+
+        html += `
+            <div class="job-template-card" data-template-id="${template.id}">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0">${template.name}</h6>
+                    ${approvalBadge}
+                </div>
+                <p class="text-muted small mb-2">${template.description}</p>
+                <div class="mb-2">${tagsHtml}</div>
+                <small class="text-muted">
+                    <i class="fas fa-building mr-1"></i>${template.vendor}
+                </small>
+            </div>
+        `;
+    });
+
+    $('#templates-list').html(html);
+}
+
+function selectTemplate(templateId) {
+    selectedTemplate = templateId;
+
+    // Find template data (in real implementation, fetch from API)
+    let template = {
+        id: templateId,
+        name: templateId === 'sentinel1-quarantine' ? 'SentinelOne Quarantine Host' : 'Velociraptor Forensic Collection',
+        description: templateId === 'sentinel1-quarantine' ?
+            'Quarantine a host using SentinelOne API' :
+            'Collect forensic artifacts using Velociraptor',
+        requires_approval: templateId === 'sentinel1-quarantine',
+        allowed_target_types: ['agent_id', 'hostname']
+    };
+
+    renderJobConfig(template);
+}
+
+function renderJobConfig(template) {
+    let approvalSection = template.requires_approval ? `
+        <div class="alert alert-warning">
+            <i class="fas fa-shield-alt mr-2"></i>
+            This template requires approval before execution
+        </div>
+    ` : '';
+
+    let html = `
+        <h6>${template.name}</h6>
+        <p class="text-muted small">${template.description}</p>
+
+        ${approvalSection}
+
+        <form id="job-form">
+            <div class="form-group">
+                <label>Target *</label>
+                <input type="text" class="form-control" id="job-target"
+                       placeholder="Enter agent ID, hostname, or IP..." required>
+                <small class="text-muted">Supported: ${template.allowed_target_types.join(', ')}</small>
+            </div>
+
+            <div class="form-group">
+                <label>Comment</label>
+                <textarea class="form-control" id="job-comment"
+                          placeholder="Optional comment about this job..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="store-artifacts" checked>
+                    <label class="form-check-label" for="store-artifacts">
+                        Store artifacts in case
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="send-notifications" checked>
+                    <label class="form-check-label" for="send-notifications">
+                        Send notifications
+                    </label>
+                </div>
+            </div>
+        </form>
+
+        <div class="mt-3">
+            <button type="button" class="btn btn-primary btn-block" id="btn-run-job">
+                <i class="fas fa-play mr-1"></i>Run Job
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-block" id="btn-dry-run">
+                <i class="fas fa-vial mr-1"></i>Dry Run
+            </button>
+        </div>
+    `;
+
+    $('#job-config-panel').html(html);
+}
+
+function runJob() {
+    let target = $('#job-target').val().trim();
+    let comment = $('#job-comment').val().trim();
+
+    if (!target) {
+        showNotification('Please specify a target', 'warning');
+        return;
+    }
+
+    let jobData = {
+        template_id: selectedTemplate,
+        target: target,
+        comment: comment,
+        store_artifacts: $('#store-artifacts').is(':checked'),
+        send_notifications: $('#send-notifications').is(':checked')
+    };
+
+    // Check if approval is required
+    if (selectedTemplate === 'sentinel1-quarantine') {
+        $('#approvalModal').modal('show');
+        return;
+    }
+
+    executeJob(jobData);
+}
+
+function executeJob(jobData) {
+    $.ajax({
+        url: `/soar/jobs?cid=${caseId}`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(jobData),
+        success: function(response) {
+            if (response.status === 'success') {
+                showNotification('Job created successfully', 'success');
+                currentJob = response.data.job_id;
+                loadJobDetails(currentJob);
+                loadRecentJobs();
+            } else {
+                showNotification('Failed to create job: ' + response.message, 'error');
+            }
+        },
+        error: function() {
+            showNotification('Error creating job', 'error');
+        }
+    });
+}
+
+function loadRecentJobs() {
+    $.ajax({
+        url: `/soar/jobs?cid=${caseId}`,
+        method: 'GET',
+        success: function(response) {
+            if (response.status === 'success') {
+                renderRecentJobs(response.data);
+            }
+        }
+    });
+}
+
+function renderRecentJobs(jobs) {
+    let html = '';
+
+    if (jobs.length === 0) {
+        html = '<div class="text-center text-muted p-2">No jobs found</div>';
+    } else {
+        jobs.forEach(job => {
+            html += `
+                <div class="border-bottom pb-2 mb-2 job-item" data-job-id="${job.job_id}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="font-weight-bold">${job.template_name}</small>
+                        <span class="job-status ${job.status.toLowerCase()}">${job.status}</span>
+                    </div>
+                    <small class="text-muted d-block">Target: ${job.target}</small>
+                    <small class="text-muted">${job.start_time}</small>
+                </div>
+            `;
+        });
+    }
+
+    $('#recent-jobs-list').html(html);
+
+    // Add click handlers for job items
+    $('.job-item').click(function() {
+        let jobId = $(this).data('job-id');
+        loadJobDetails(jobId);
+    });
+}
+
+function loadJobDetails(jobId) {
+    currentJob = jobId;
+
+    $.ajax({
+        url: `/soar/jobs/${jobId}?cid=${caseId}`,
+        method: 'GET',
+        success: function(response) {
+            if (response.status === 'success') {
+                renderJobDetails(response.data);
+            }
+        }
+    });
+}
+
+function renderJobDetails(job) {
+    let stepsHtml = '';
+    job.steps.forEach(step => {
+        let statusClass = step.status.toLowerCase();
+        stepsHtml += `
+            <div class="step-item ${statusClass}">
+                <h6 class="mb-1">${step.name}</h6>
+                <small class="text-muted">${step.start_time} - ${step.end_time || 'Running...'}</small>
+                <div class="job-status ${statusClass} d-inline-block mt-1">${step.status}</div>
+            </div>
+        `;
+    });
+
+    let artifactsHtml = '';
+    if (job.artifacts && job.artifacts.length > 0) {
+        artifactsHtml = '<h6 class="mt-3">Artifacts</h6>';
+        job.artifacts.forEach(artifact => {
+            artifactsHtml += `
+                <div class="border-bottom pb-2 mb-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>${artifact.name}</span>
+                        <small class="text-muted">${artifact.size}</small>
+                    </div>
+                    <a href="${artifact.url}" class="btn btn-sm btn-outline-primary mt-1">
+                        <i class="fas fa-download mr-1"></i>Download
+                    </a>
+                </div>
+            `;
+        });
+    }
+
+    let html = `
+        <h6>${job.template_name}</h6>
+        <div class="mb-3">
+            <span class="job-status ${job.status.toLowerCase()}">${job.status}</span>
+            <small class="d-block text-muted mt-1">Job ID: ${job.job_id}</small>
+            <small class="text-muted">Target: ${job.target}</small>
+        </div>
+
+        <h6>Execution Timeline</h6>
+        <div class="step-timeline">
+            ${stepsHtml}
+        </div>
+
+        ${artifactsHtml}
+    `;
+
+    $('#job-details-panel').html(html);
+}
+
+function refreshJobStatus() {
+    if (currentJob) {
+        loadJobDetails(currentJob);
+    }
+}
+
+function requestApproval() {
+    let approver = $('#approver-select').val();
+    let reason = $('#approval-reason').val();
+    let urgency = $('#urgency-level').val();
+
+    if (!approver || !reason) {
+        showNotification('Please fill in all required fields', 'warning');
+        return;
+    }
+
+    // TODO: Implement approval request API
+    showNotification('Approval request sent successfully', 'success');
+    $('#approvalModal').modal('hide');
+}
+
+function filterTemplates() {
+    let search = $('#template-search').val().toLowerCase();
+    let vendor = $('#vendor-filter').val();
+    let category = $('#category-filter').val();
+
+    $('.job-template-card').each(function() {
+        let card = $(this);
+        let text = card.text().toLowerCase();
+        let cardVendor = card.find('.fas.fa-building').parent().text().trim();
+        let cardCategories = card.find('.template-tag').map(function() {
+            return $(this).text();
+        }).get();
+
+        let matchesSearch = !search || text.includes(search);
+        let matchesVendor = !vendor || cardVendor.includes(vendor);
+        let matchesCategory = !category || cardCategories.includes(category);
+
+        if (matchesSearch && matchesVendor && matchesCategory) {
+            card.show();
+        } else {
+            card.hide();
+        }
+    });
+}
+
+function showNotification(message, type) {
+    // Simple notification using bootstrap alerts
+    let alertClass = 'alert-info';
+    if (type === 'success') alertClass = 'alert-success';
+    else if (type === 'warning') alertClass = 'alert-warning';
+    else if (type === 'error') alertClass = 'alert-danger';
+
+    let notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show position-fixed"
+             style="top: 20px; right: 20px; z-index: 9999; max-width: 400px;">
+            ${message}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+    `);
+
+    $('body').append(notification);
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(function() {
+        notification.alert('close');
+    }, 5000);
+}
+</script>
+{% endblock javascripts %}

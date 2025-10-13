@@ -532,8 +532,10 @@ def api_login_required(f):
 
 
 def ac_return_access_denied(caseid: int = None):
+    import traceback
     error_uuid = uuid.uuid4()
-    log.warning(f"Access denied to case #{caseid} for user ID {current_user.id}. Error {error_uuid}")
+    stack_trace = ''.join(traceback.format_stack())
+    log.warning(f"Access denied to case #{caseid} for user ID {current_user.id}. Error {error_uuid}. Stack trace: {stack_trace}")
     return render_template('pages/error-403.html', user=current_user, caseid=caseid, error_uuid=error_uuid,
                            template_folder=TEMPLATE_PATH), 403
 
