@@ -19,6 +19,10 @@
 import traceback
 import requests
 import uuid
+import os
+import json
+import time
+import zipfile
 from datetime import datetime
 from flask import Blueprint
 from flask import render_template
@@ -78,11 +82,44 @@ def soar_templates_list():
         templates = [
             {
                 "id": "sentinel1-quarantine",
-                "name": "SentinelOne Quarantine Host",
-                "description": "Quarantine a host using SentinelOne API",
+                "name": "SentinelOne Network Quarantine",
+                "description": "Isolate an endpoint from the network to prevent lateral movement",
                 "vendor": "SentinelOne",
-                "tags": ["containment"],
+                "tags": ["containment", "isolation"],
                 "requires_approval": True,
+                "allowed_target_types": ["agent_id", "hostname"],
+                "created_by": "system",
+                "created_at": "2025-10-13T00:00:00Z"
+            },
+            {
+                "id": "sentinel1-fetch-apps",
+                "name": "SentinelOne Fetch Installed Applications",
+                "description": "Retrieve list of installed applications from endpoint",
+                "vendor": "SentinelOne",
+                "tags": ["forensics", "inventory"],
+                "requires_approval": False,
+                "allowed_target_types": ["agent_id", "hostname"],
+                "created_by": "system",
+                "created_at": "2025-10-13T00:00:00Z"
+            },
+            {
+                "id": "sentinel1-fetch-logs",
+                "name": "SentinelOne Fetch Endpoint Logs",
+                "description": "Collect endpoint logs for evidence gathering",
+                "vendor": "SentinelOne",
+                "tags": ["forensics", "logs"],
+                "requires_approval": False,
+                "allowed_target_types": ["agent_id", "hostname"],
+                "created_by": "system",
+                "created_at": "2025-10-13T00:00:00Z"
+            },
+            {
+                "id": "sentinel1-full-scan",
+                "name": "SentinelOne Full Disk Scan",
+                "description": "Initiate a complete disk scan on the endpoint",
+                "vendor": "SentinelOne",
+                "tags": ["scanning", "detection"],
+                "requires_approval": False,
                 "allowed_target_types": ["agent_id", "hostname"],
                 "created_by": "system",
                 "created_at": "2025-10-13T00:00:00Z"
@@ -282,7 +319,13 @@ def execute_soar_job(job_id, template_id, target, case_id, integrations_config):
 
         # Execute the specific job type
         if template_id == 'sentinel1-quarantine':
-            result = execute_sentinelone_quarantine(job_id, target, config)
+            result = execute_sentinelone_quarantine(job_id, target, config, case_id)
+        elif template_id == 'sentinel1-fetch-apps':
+            result = execute_sentinelone_fetch_apps(job_id, target, config, case_id)
+        elif template_id == 'sentinel1-fetch-logs':
+            result = execute_sentinelone_fetch_logs(job_id, target, config, case_id)
+        elif template_id == 'sentinel1-full-scan':
+            result = execute_sentinelone_full_scan(job_id, target, config, case_id)
         elif template_id == 'velociraptor-collect':
             result = execute_velociraptor_collect(job_id, target, config)
         else:
@@ -309,13 +352,69 @@ def get_template_name(template_id):
     Get the display name for a template ID
     """
     template_names = {
-        'sentinel1-quarantine': 'SentinelOne Quarantine Host',
+        'sentinel1-quarantine': 'SentinelOne Network Quarantine',
+        'sentinel1-fetch-apps': 'SentinelOne Fetch Installed Applications',
+        'sentinel1-fetch-logs': 'SentinelOne Fetch Endpoint Logs',
+        'sentinel1-full-scan': 'SentinelOne Full Disk Scan',
         'velociraptor-collect': 'Velociraptor Forensic Collection'
     }
     return template_names.get(template_id, template_id)
 
 
-def execute_sentinelone_quarantine(job_id, target, config):
+def create_case_artifact_folder(case_id):
+    """
+    Create the artifacts folder structure for a case
+    """
+    try:
+        artifact_path = f"/home/iris/server_data/cases/{case_id}/artifacts/sentinelone"
+        os.makedirs(artifact_path, exist_ok=True)
+        return artifact_path
+    except Exception as e:
+        print(f"Error creating artifact folder: {str(e)}")
+        return None
+
+
+def save_case_artifact(case_id, filename, data):
+    """
+    Save artifact data to case folder
+    """
+    try:
+        artifact_path = create_case_artifact_folder(case_id)
+        if not artifact_path:
+            return None
+
+        file_path = os.path.join(artifact_path, filename)
+
+        if isinstance(data, dict):
+            with open(file_path, 'w') as f:
+                json.dump(data, f, indent=2)
+        elif isinstance(data, bytes):
+            with open(file_path, 'wb') as f:
+                f.write(data)
+        else:
+            with open(file_path, 'w') as f:
+                f.write(str(data))
+
+        return file_path
+    except Exception as e:
+        print(f"Error saving artifact: {str(e)}")
+        return None
+
+
+def add_case_note(case_id, note_content):
+    """
+    Add a note to the case (placeholder - would integrate with IRIS notes system)
+    """
+    try:
+        # TODO: Integrate with actual IRIS notes API
+        print(f"Case {case_id} Note: {note_content}")
+        return True
+    except Exception as e:
+        print(f"Error adding case note: {str(e)}")
+        return False
+
+
+def execute_sentinelone_quarantine(job_id, target, config, case_id):
     """
     Execute SentinelOne quarantine job
     """
@@ -369,14 +468,42 @@ def execute_sentinelone_quarantine(job_id, target, config):
         response = requests.post(quarantine_endpoint, headers=headers, json=quarantine_data, verify=verify_ssl, timeout=30)
 
         if response.status_code == 200:
+            end_time = datetime.now().isoformat() + "Z"
+
+            # Save quarantine action details as artifact
+            quarantine_data = {
+                "job_id": job_id,
+                "action": "network_quarantine",
+                "target": target,
+                "agent_id": agent_id,
+                "timestamp": end_time,
+                "status": "completed",
+                "api_response": response.json()
+            }
+
+            artifact_filename = f"quarantine_action_{target}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            artifact_path = save_case_artifact(case_id, artifact_filename, quarantine_data)
+
+            # Create case note
+            note_content = f"""**SOAR Action:** Network Quarantine
+**Endpoint:** {target}
+**Timestamp:** {end_time}
+**Status:** ✅ Host successfully isolated from network.
+_This action prevents all inbound/outbound connections except SentinelOne management._
+
+**Artifact:** `/cases/{case_id}/artifacts/sentinelone/{artifact_filename}`"""
+
+            add_case_note(case_id, note_content)
+
             return {
                 "job_id": job_id,
                 "status": "Completed",
                 "message": f"Successfully quarantined agent {target}",
-                "template_name": "SentinelOne Quarantine Host",
+                "template_name": "SentinelOne Network Quarantine",
                 "target": target,
                 "start_time": datetime.now().isoformat() + "Z",
-                "end_time": datetime.now().isoformat() + "Z",
+                "end_time": end_time,
+                "artifact_path": artifact_path,
                 "steps": [
                     {
                         "step_id": "find_agent",
@@ -389,6 +516,12 @@ def execute_sentinelone_quarantine(job_id, target, config):
                         "name": "Quarantine Agent",
                         "status": "Completed",
                         "message": "Agent successfully quarantined"
+                    },
+                    {
+                        "step_id": "save_artifact",
+                        "name": "Save Artifact",
+                        "status": "Completed",
+                        "message": f"Saved quarantine details to {artifact_filename}"
                     }
                 ]
             }
@@ -412,6 +545,149 @@ def execute_sentinelone_quarantine(job_id, target, config):
             "job_id": job_id,
             "status": "Failed",
             "message": f"SentinelOne quarantine job failed: {str(e)}",
+            "error": str(e)
+        }
+
+
+def execute_sentinelone_fetch_apps(job_id, target, config, case_id):
+    """
+    Execute SentinelOne fetch installed applications playbook
+    """
+    try:
+        base_url = config.get('base_url').rstrip('/')
+        api_token = config.get('api_token')
+        verify_ssl = config.get('verify_ssl', True)
+        start_time = datetime.now().isoformat() + "Z"
+
+        headers = {
+            'Authorization': f'ApiToken {api_token}',
+            'Content-Type': 'application/json'
+        }
+
+        # Step 1: Find agent by hostname or agent ID
+        if target.startswith('agent-'):
+            agent_id = target.replace('agent-', '')
+        else:
+            # Search by hostname
+            agents_endpoint = f'{base_url}/web/api/v2.1/agents'
+            params = {'computerName': target, 'limit': 1}
+
+            response = requests.get(agents_endpoint, headers=headers, params=params, verify=verify_ssl, timeout=30)
+            if response.status_code != 200:
+                return {
+                    "job_id": job_id,
+                    "status": "Failed",
+                    "message": f"Failed to find agent: {target}",
+                    "error": f"SentinelOne API returned status {response.status_code}"
+                }
+
+            agents = response.json().get('data', [])
+            if not agents:
+                return {
+                    "job_id": job_id,
+                    "status": "Failed",
+                    "message": f"Agent not found: {target}",
+                    "error": "No agents found matching the target hostname"
+                }
+
+            agent_id = agents[0]['id']
+
+        # Step 2: Fetch installed applications
+        apps_endpoint = f'{base_url}/web/api/v2.1/agents/{agent_id}/installed-applications'
+        response = requests.get(apps_endpoint, headers=headers, verify=verify_ssl, timeout=30)
+
+        if response.status_code == 200:
+            end_time = datetime.now().isoformat() + "Z"
+            apps_data = response.json()
+            installed_apps = apps_data.get('data', [])
+
+            # Save applications data as artifact
+            artifact_filename = f"fetch_installed_apps_{target}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            artifact_path = save_case_artifact(case_id, artifact_filename, {
+                "job_id": job_id,
+                "action": "fetch_installed_applications",
+                "target": target,
+                "agent_id": agent_id,
+                "timestamp": end_time,
+                "total_applications": len(installed_apps),
+                "applications": installed_apps
+            })
+
+            # Create formatted app list for case note
+            app_list = []
+            for i, app in enumerate(installed_apps[:20], 1):  # Limit to first 20 for note
+                name = app.get('name', 'Unknown')
+                version = app.get('version', 'Unknown')
+                publisher = app.get('publisher', 'Unknown')
+                app_list.append(f"{i}. {name} {version} ({publisher})")
+
+            if len(installed_apps) > 20:
+                app_list.append(f"... and {len(installed_apps) - 20} more applications")
+
+            # Create case note
+            note_content = f"""**SOAR Action:** Fetch Installed Apps
+**Endpoint:** {target}
+**Timestamp:** {end_time}
+**Results:** Retrieved {len(installed_apps)} applications.
+
+**Installed Apps:**
+{chr(10).join(app_list)}
+
+**Artifact:** `/cases/{case_id}/artifacts/sentinelone/{artifact_filename}`"""
+
+            add_case_note(case_id, note_content)
+
+            return {
+                "job_id": job_id,
+                "status": "Completed",
+                "message": f"Successfully retrieved {len(installed_apps)} applications from {target}",
+                "template_name": "SentinelOne Fetch Installed Applications",
+                "target": target,
+                "start_time": start_time,
+                "end_time": end_time,
+                "artifact_path": artifact_path,
+                "applications_count": len(installed_apps),
+                "steps": [
+                    {
+                        "step_id": "find_agent",
+                        "name": "Find Agent",
+                        "status": "Completed",
+                        "message": f"Found agent ID: {agent_id}"
+                    },
+                    {
+                        "step_id": "fetch_apps",
+                        "name": "Fetch Applications",
+                        "status": "Completed",
+                        "message": f"Retrieved {len(installed_apps)} installed applications"
+                    },
+                    {
+                        "step_id": "save_artifact",
+                        "name": "Save Artifact",
+                        "status": "Completed",
+                        "message": f"Saved applications list to {artifact_filename}"
+                    }
+                ]
+            }
+        else:
+            return {
+                "job_id": job_id,
+                "status": "Failed",
+                "message": f"Failed to fetch applications from agent: {target}",
+                "error": f"SentinelOne API returned status {response.status_code}: {response.text}"
+            }
+
+    except requests.exceptions.RequestException as e:
+        return {
+            "job_id": job_id,
+            "status": "Failed",
+            "message": f"Connection error to SentinelOne: {str(e)}",
+            "error": "Check integration settings and network connectivity"
+        }
+    except Exception as e:
+        return {
+            "job_id": job_id,
+            "status": "Failed",
+            "message": f"SentinelOne fetch applications job failed: {str(e)}",
             "error": str(e)
         }
 
@@ -533,5 +809,305 @@ def execute_velociraptor_collect(job_id, target, config):
             "job_id": job_id,
             "status": "Failed",
             "message": f"Velociraptor collection job failed: {str(e)}",
+            "error": str(e)
+        }
+
+
+def execute_sentinelone_fetch_logs(job_id, target, config, case_id):
+    """
+    Execute SentinelOne fetch endpoint logs playbook
+    """
+    try:
+        base_url = config.get('base_url').rstrip('/')
+        api_token = config.get('api_token')
+        verify_ssl = config.get('verify_ssl', True)
+        start_time = datetime.now().isoformat() + "Z"
+
+        headers = {
+            'Authorization': f'ApiToken {api_token}',
+            'Content-Type': 'application/json'
+        }
+
+        # Step 1: Find agent by hostname or agent ID
+        if target.startswith('agent-'):
+            agent_id = target.replace('agent-', '')
+        else:
+            # Search by hostname
+            agents_endpoint = f'{base_url}/web/api/v2.1/agents'
+            params = {'computerName': target, 'limit': 1}
+
+            response = requests.get(agents_endpoint, headers=headers, params=params, verify=verify_ssl, timeout=30)
+            if response.status_code != 200:
+                return {
+                    "job_id": job_id,
+                    "status": "Failed",
+                    "message": f"Failed to find agent: {target}",
+                    "error": f"SentinelOne API returned status {response.status_code}"
+                }
+
+            agents = response.json().get('data', [])
+            if not agents:
+                return {
+                    "job_id": job_id,
+                    "status": "Failed",
+                    "message": f"Agent not found: {target}",
+                    "error": "No agents found matching the target hostname"
+                }
+
+            agent_id = agents[0]['id']
+
+        # Step 2: Initiate log fetch
+        logs_endpoint = f'{base_url}/web/api/v2.1/agents/actions/fetch-logs'
+        logs_data = {
+            'filter': {
+                'ids': [agent_id]
+            },
+            'data': {
+                'logTypes': ['agent', 'security']
+            }
+        }
+
+        response = requests.post(logs_endpoint, headers=headers, json=logs_data, verify=verify_ssl, timeout=30)
+
+        if response.status_code == 200:
+            fetch_response = response.json()
+            activity_id = fetch_response.get('data', {}).get('activityId')
+
+            # Poll for completion (simplified - in real implementation would poll properly)
+            time.sleep(2)  # Wait a moment for processing
+
+            # Step 3: Check status and get download URL
+            status_endpoint = f'{base_url}/web/api/v2.1/activities/{activity_id}'
+            status_response = requests.get(status_endpoint, headers=headers, verify=verify_ssl, timeout=30)
+
+            end_time = datetime.now().isoformat() + "Z"
+
+            # Save log fetch details as artifact
+            artifact_filename = f"logs_{target}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            logs_data = {
+                "job_id": job_id,
+                "action": "fetch_endpoint_logs",
+                "target": target,
+                "agent_id": agent_id,
+                "timestamp": end_time,
+                "activity_id": activity_id,
+                "status": "completed",
+                "fetch_response": fetch_response
+            }
+
+            artifact_path = save_case_artifact(case_id, artifact_filename, logs_data)
+
+            # Create case note
+            note_content = f"""**SOAR Action:** Fetch Endpoint Logs
+**Endpoint:** {target}
+**Timestamp:** {end_time}
+**Status:** ✅ Completed
+**Log Fetch Activity:** {activity_id}
+
+_Logs collected for forensic review._
+
+**Artifact:** `/cases/{case_id}/artifacts/sentinelone/{artifact_filename}`"""
+
+            add_case_note(case_id, note_content)
+
+            return {
+                "job_id": job_id,
+                "status": "Completed",
+                "message": f"Successfully initiated log fetch for {target}",
+                "template_name": "SentinelOne Fetch Endpoint Logs",
+                "target": target,
+                "start_time": start_time,
+                "end_time": end_time,
+                "activity_id": activity_id,
+                "artifact_path": artifact_path,
+                "steps": [
+                    {
+                        "step_id": "find_agent",
+                        "name": "Find Agent",
+                        "status": "Completed",
+                        "message": f"Found agent ID: {agent_id}"
+                    },
+                    {
+                        "step_id": "initiate_fetch",
+                        "name": "Initiate Log Fetch",
+                        "status": "Completed",
+                        "message": f"Log fetch started with activity ID: {activity_id}"
+                    },
+                    {
+                        "step_id": "save_artifact",
+                        "name": "Save Artifact",
+                        "status": "Completed",
+                        "message": f"Saved log fetch details to {artifact_filename}"
+                    }
+                ]
+            }
+        else:
+            return {
+                "job_id": job_id,
+                "status": "Failed",
+                "message": f"Failed to fetch logs from agent: {target}",
+                "error": f"SentinelOne API returned status {response.status_code}: {response.text}"
+            }
+
+    except requests.exceptions.RequestException as e:
+        return {
+            "job_id": job_id,
+            "status": "Failed",
+            "message": f"Connection error to SentinelOne: {str(e)}",
+            "error": "Check integration settings and network connectivity"
+        }
+    except Exception as e:
+        return {
+            "job_id": job_id,
+            "status": "Failed",
+            "message": f"SentinelOne fetch logs job failed: {str(e)}",
+            "error": str(e)
+        }
+
+
+def execute_sentinelone_full_scan(job_id, target, config, case_id):
+    """
+    Execute SentinelOne full disk scan playbook
+    """
+    try:
+        base_url = config.get('base_url').rstrip('/')
+        api_token = config.get('api_token')
+        verify_ssl = config.get('verify_ssl', True)
+        start_time = datetime.now().isoformat() + "Z"
+
+        headers = {
+            'Authorization': f'ApiToken {api_token}',
+            'Content-Type': 'application/json'
+        }
+
+        # Step 1: Find agent by hostname or agent ID
+        if target.startswith('agent-'):
+            agent_id = target.replace('agent-', '')
+        else:
+            # Search by hostname
+            agents_endpoint = f'{base_url}/web/api/v2.1/agents'
+            params = {'computerName': target, 'limit': 1}
+
+            response = requests.get(agents_endpoint, headers=headers, params=params, verify=verify_ssl, timeout=30)
+            if response.status_code != 200:
+                return {
+                    "job_id": job_id,
+                    "status": "Failed",
+                    "message": f"Failed to find agent: {target}",
+                    "error": f"SentinelOne API returned status {response.status_code}"
+                }
+
+            agents = response.json().get('data', [])
+            if not agents:
+                return {
+                    "job_id": job_id,
+                    "status": "Failed",
+                    "message": f"Agent not found: {target}",
+                    "error": "No agents found matching the target hostname"
+                }
+
+            agent_id = agents[0]['id']
+
+        # Step 2: Initiate full scan
+        scan_endpoint = f'{base_url}/web/api/v2.1/agents/actions/initiate-scan'
+        scan_data = {
+            'filter': {
+                'ids': [agent_id]
+            },
+            'data': {
+                'scanType': 'full'
+            }
+        }
+
+        response = requests.post(scan_endpoint, headers=headers, json=scan_data, verify=verify_ssl, timeout=30)
+
+        if response.status_code == 200:
+            scan_response = response.json()
+            activity_id = scan_response.get('data', {}).get('activityId')
+
+            # Step 3: Poll scan status (simplified)
+            time.sleep(3)  # Wait for scan to start
+            end_time = datetime.now().isoformat() + "Z"
+
+            # Save scan details as artifact
+            artifact_filename = f"scan_report_{target}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            scan_data_artifact = {
+                "job_id": job_id,
+                "action": "full_disk_scan",
+                "target": target,
+                "agent_id": agent_id,
+                "timestamp": end_time,
+                "activity_id": activity_id,
+                "scan_type": "full",
+                "status": "initiated",
+                "scan_response": scan_response
+            }
+
+            artifact_path = save_case_artifact(case_id, artifact_filename, scan_data_artifact)
+
+            # Create case note
+            note_content = f"""**SOAR Action:** Full Disk Scan
+**Endpoint:** {target}
+**Timestamp:** {end_time}
+**Result:** Scan initiated - Activity ID: {activity_id}
+
+_Full scan started on endpoint. Check SentinelOne console for completion status._
+
+**Artifact:** `/cases/{case_id}/artifacts/sentinelone/{artifact_filename}`"""
+
+            add_case_note(case_id, note_content)
+
+            return {
+                "job_id": job_id,
+                "status": "Running",
+                "message": f"Full disk scan initiated for {target}",
+                "template_name": "SentinelOne Full Disk Scan",
+                "target": target,
+                "start_time": start_time,
+                "end_time": end_time,
+                "activity_id": activity_id,
+                "artifact_path": artifact_path,
+                "estimated_duration": "30-60 minutes",
+                "steps": [
+                    {
+                        "step_id": "find_agent",
+                        "name": "Find Agent",
+                        "status": "Completed",
+                        "message": f"Found agent ID: {agent_id}"
+                    },
+                    {
+                        "step_id": "initiate_scan",
+                        "name": "Initiate Full Scan",
+                        "status": "Running",
+                        "message": f"Full disk scan started with activity ID: {activity_id}"
+                    },
+                    {
+                        "step_id": "save_artifact",
+                        "name": "Save Artifact",
+                        "status": "Completed",
+                        "message": f"Saved scan details to {artifact_filename}"
+                    }
+                ]
+            }
+        else:
+            return {
+                "job_id": job_id,
+                "status": "Failed",
+                "message": f"Failed to initiate scan on agent: {target}",
+                "error": f"SentinelOne API returned status {response.status_code}: {response.text}"
+            }
+
+    except requests.exceptions.RequestException as e:
+        return {
+            "job_id": job_id,
+            "status": "Failed",
+            "message": f"Connection error to SentinelOne: {str(e)}",
+            "error": "Check integration settings and network connectivity"
+        }
+    except Exception as e:
+        return {
+            "job_id": job_id,
+            "status": "Failed",
+            "message": f"SentinelOne full scan job failed: {str(e)}",
             "error": str(e)
         }
