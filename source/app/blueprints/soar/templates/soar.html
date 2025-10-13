@@ -101,6 +101,47 @@
             </div>
         </div>
 
+        <!-- Case Switcher -->
+        <div class="page-inner mt-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title"><i class="fas fa-exchange-alt mr-2"></i>Case Switcher</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <label for="case-selector" class="form-label">Select Case:</label>
+                                    <select id="case-selector" class="form-control">
+                                        {% for case_item in all_cases %}
+                                        <option value="{{ case_item.case_id }}"
+                                                {% if case_item.case_id == case_id %}selected{% endif %}>
+                                            #{{ case_item.case_id }} - {{ case_item.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="sort-order" class="form-label">Sort Order:</label>
+                                    <select id="sort-order" class="form-control">
+                                        <option value="asc">Smallest to Largest</option>
+                                        <option value="desc">Largest to Smallest</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <br>
+                                    <button id="switch-case-btn" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-arrow-right mr-1"></i>Switch
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="page-inner soar-container">
             <div class="row">
                 <!-- Left Column: Job Catalog -->
@@ -643,5 +684,48 @@ function showNotification(message, type) {
         notification.alert('close');
     }, 5000);
 }
+
+// Case Switcher Functionality
+$(document).ready(function() {
+    // Handle sort order changes
+    $('#sort-order').on('change', function() {
+        const sortOrder = $(this).val();
+        const caseSelector = $('#case-selector');
+        const options = caseSelector.find('option').detach();
+
+        // Sort options
+        options.sort(function(a, b) {
+            const caseIdA = parseInt($(a).val());
+            const caseIdB = parseInt($(b).val());
+
+            if (sortOrder === 'asc') {
+                return caseIdA - caseIdB;
+            } else {
+                return caseIdB - caseIdA;
+            }
+        });
+
+        // Re-append sorted options
+        caseSelector.append(options);
+    });
+
+    // Handle case switching
+    $('#switch-case-btn').on('click', function() {
+        const selectedCaseId = $('#case-selector').val();
+        if (selectedCaseId && selectedCaseId !== '{{ case_id }}') {
+            // Redirect to SOAR page with new case ID
+            window.location.href = '/soar?cid=' + selectedCaseId;
+        } else if (selectedCaseId === '{{ case_id }}') {
+            showNotification('info', 'Case Switcher', 'Already viewing case #' + selectedCaseId);
+        } else {
+            showNotification('warning', 'Case Switcher', 'Please select a case to switch to');
+        }
+    });
+
+    // Handle double-click on dropdown for quick switch
+    $('#case-selector').on('dblclick', function() {
+        $('#switch-case-btn').click();
+    });
+});
 </script>
 {% endblock javascripts %}

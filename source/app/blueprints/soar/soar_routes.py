@@ -27,6 +27,7 @@ from flask_login import current_user, login_required
 
 from app import db
 from app.datamgmt.case.case_db import get_case
+from app.models import Cases
 from app.util import response_success, response_error
 
 soar_blueprint = Blueprint('soar',
@@ -48,9 +49,13 @@ def soar_index():
         if not case:
             return response_error("Case not found")
 
+        # Get all cases for the switcher dropdown
+        all_cases = Cases.query.filter(Cases.case_id != None).order_by(Cases.case_id.asc()).all()
+
         return render_template('soar.html',
                              case=case,
-                             case_id=caseid)
+                             case_id=caseid,
+                             all_cases=all_cases)
 
     except Exception as e:
         traceback.print_exc()
