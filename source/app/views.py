@@ -107,6 +107,17 @@ app.register_blueprint(saved_filters_blueprint)
 app.register_blueprint(ctx_blueprint)
 app.register_blueprint(case_blueprint)
 app.register_blueprint(soar_blueprint)
+
+# Debug logging for all requests to SOAR routes
+from datetime import datetime
+from flask import request
+
+@app.before_request
+def log_soar_requests():
+    if request.path.startswith('/soar'):
+        with open('/tmp/soar_debug.log', 'a') as f:
+            f.write(f"[{datetime.now()}] SOAR request: {request.method} {request.path} from {request.remote_addr}\n")
+
 app.register_blueprint(reports_blueprint)
 app.register_blueprint(activities_blueprint)
 app.register_blueprint(dim_tasks_blueprint)

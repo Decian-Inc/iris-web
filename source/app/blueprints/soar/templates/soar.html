@@ -503,8 +503,23 @@ function executeJob(jobData) {
                 showNotification('Failed to create job: ' + response.message, 'error');
             }
         },
-        error: function() {
-            showNotification('Error creating job', 'error');
+        error: function(xhr, status, error) {
+            let errorMsg = 'Error creating job';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = 'API Error: ' + xhr.responseJSON.message;
+            } else if (xhr.responseText) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.message) {
+                        errorMsg = 'API Error: ' + response.message;
+                    }
+                } catch (e) {
+                    errorMsg = 'Server Error: ' + xhr.status + ' - Integration not configured or API call failed';
+                }
+            } else {
+                errorMsg = 'Connection Error: Unable to reach SOAR service - Check integration settings';
+            }
+            showNotification(errorMsg, 'error');
         }
     });
 }

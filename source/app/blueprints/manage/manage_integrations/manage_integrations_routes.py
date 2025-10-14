@@ -29,6 +29,7 @@ from flask_login import current_user, login_required
 
 from app import db
 from app.models.authorization import Permissions
+from app.models.integrations import IntegrationConfig
 from app.util import ac_requires
 from app.util import response_success, response_error
 from app.iris_engine.utils.tracker import track_activity
@@ -124,39 +125,100 @@ def test_integration_connection():
 
 def get_integrations_config():
     """
-    Get current integrations configuration
+    Get current integrations configuration from database
     """
-    # For now, return default empty config
-    # Later this would read from database or config file
-    return {
-        'velociraptor': {
-            'enabled': False,
-            'base_url': '',
-            'api_key': '',
-            'ca_cert': '',
-            'verify_ssl': True
-        },
-        'sentinelone': {
-            'enabled': False,
-            'base_url': '',
-            'api_token': '',
-            'verify_ssl': True,
-            'site_id': ''
+    try:
+        # Get all integration configs from database
+        configs = IntegrationConfig.query.all()
+
+        # Build response dictionary
+        result = {}
+
+        for config in configs:
+            config_data = config.config_data or {}
+            result[config.integration_type] = {
+                'enabled': config.enabled,
+                **config_data
+            }
+
+        # Ensure default configs exist for known integrations
+        default_configs = {
+            'velociraptor': {
+                'enabled': False,
+                'base_url': '',
+                'api_key': '',
+                'ca_cert': '',
+                'verify_ssl': True
+            },
+            'sentinelone': {
+                'enabled': False,
+                'base_url': '',
+                'api_token': '',
+                'verify_ssl': True,
+                'site_id': ''
+            }
         }
-    }
+
+        # Merge with defaults for any missing integrations
+        for integration_type, default_config in default_configs.items():
+            if integration_type not in result:
+                result[integration_type] = default_config
+
+        return result
+
+    except Exception as e:
+        log.error(f"Error loading integrations config: {str(e)}")
+        # Return safe defaults on error
+        return {
+            'velociraptor': {
+                'enabled': False,
+                'base_url': '',
+                'api_key': '',
+                'ca_cert': '',
+                'verify_ssl': True
+            },
+            'sentinelone': {
+                'enabled': False,
+                'base_url': '',
+                'api_token': '',
+                'verify_ssl': True,
+                'site_id': ''
+            }
+        }
 
 
 def save_integrations_config(integration_type, config):
     """
-    Save integration configuration
+    Save integration configuration to database
     """
     try:
-        # Here you would save to database or configuration file
-        # For now, just log the configuration
-        log.info(f"Saving {integration_type} configuration: {config}")
+        # Get or create integration config record
+        integration_config = IntegrationConfig.query.filter_by(integration_type=integration_type).first()
+
+        if integration_config:
+            # Update existing record
+            integration_config.enabled = config.get('enabled', False)
+            integration_config.config_data = {k: v for k, v in config.items() if k != 'enabled'}
+            integration_config.updated_by = current_user.name if current_user.is_authenticated else 'system'
+        else:
+            # Create new record
+            integration_config = IntegrationConfig(
+                integration_type=integration_type,
+                enabled=config.get('enabled', False),
+                config_data={k: v for k, v in config.items() if k != 'enabled'},
+                created_by=current_user.name if current_user.is_authenticated else 'system',
+                updated_by=current_user.name if current_user.is_authenticated else 'system'
+            )
+            db.session.add(integration_config)
+
+        # Commit to database
+        db.session.commit()
+        log.info(f"Saved {integration_type} configuration to database")
         return True
+
     except Exception as e:
         log.error(f"Error saving integration config: {str(e)}")
+        db.session.rollback()
         return False
 
 

@@ -35,7 +35,8 @@ from flask_login import current_user, login_required
 from app import db
 from app.datamgmt.case.case_db import get_case
 from app.models import Cases
-from app.util import response_success, response_error
+from app.models.authorization import CaseAccessLevel
+from app.util import response_success, response_error, ac_api_case_requires
 from app.blueprints.manage.manage_integrations.manage_integrations_routes import get_integrations_config
 
 soar_blueprint = Blueprint('soar',
@@ -145,8 +146,8 @@ def soar_templates_list():
 
 
 @soar_blueprint.route('/soar/jobs', methods=['GET'])
-@login_required
-def soar_jobs_list():
+@ac_api_case_requires(CaseAccessLevel.read_only, CaseAccessLevel.full_access)
+def soar_jobs_list(caseid):
     """
     API endpoint to list SOAR jobs for the current case
     """
@@ -174,14 +175,32 @@ def soar_jobs_list():
         return response_error(f"Failed to retrieve jobs: {str(e)}")
 
 
-@soar_blueprint.route('/soar/jobs', methods=['POST'])
+@soar_blueprint.route('/soar/test', methods=['GET'])
 @login_required
-def soar_jobs_create():
+def soar_test():
+    """Test route to verify routing is working"""
+    with open('/tmp/soar_debug.log', 'a') as f:
+        f.write(f"[{datetime.now()}] soar_test route called!\n")
+    return jsonify({"status": "success", "message": "Test route working"})
+
+@soar_blueprint.route('/soar/jobs', methods=['POST'])
+@ac_api_case_requires(CaseAccessLevel.full_access)
+def soar_jobs_create(caseid):
     """
     API endpoint to create and execute a SOAR job
     """
     try:
+        # File-based debugging to trace execution
+        with open('/tmp/soar_debug.log', 'a') as f:
+            f.write(f"[{datetime.now()}] soar_jobs_create called!\n")
+
+        print("DEBUG: soar_jobs_create called!")
         data = request.get_json()
+
+        with open('/tmp/soar_debug.log', 'a') as f:
+            f.write(f"[{datetime.now()}] Request data: {data}\n")
+
+        print(f"DEBUG: Request data: {data}")
 
         # Validate required fields
         required_fields = ['template_id', 'target']
@@ -191,7 +210,7 @@ def soar_jobs_create():
 
         template_id = data.get('template_id')
         target = data.get('target')
-        case_id = request.args.get('cid', default=1, type=int)
+        case_id = caseid
 
         # Generate unique job ID
         job_id = f"job-{uuid.uuid4().hex[:8]}"
@@ -210,8 +229,8 @@ def soar_jobs_create():
 
 
 @soar_blueprint.route('/soar/jobs/<job_id>', methods=['GET'])
-@login_required
-def soar_job_detail(job_id):
+@ac_api_case_requires(CaseAccessLevel.read_only, CaseAccessLevel.full_access)
+def soar_job_detail(job_id, caseid):
     """
     API endpoint to get detailed information about a specific job
     """
@@ -272,6 +291,9 @@ def execute_soar_job(job_id, template_id, target, case_id, integrations_config):
     Execute a SOAR job based on the template type using integration settings
     """
     try:
+        print(f"DEBUG: execute_soar_job called with template_id={template_id}, target={target}")
+        print(f"DEBUG: integrations_config={integrations_config}")
+
         start_time = datetime.now().isoformat() + "Z"
         template_name = get_template_name(template_id)
 
@@ -291,30 +313,44 @@ def execute_soar_job(job_id, template_id, target, case_id, integrations_config):
             }
 
         # Check if integration is enabled and configured
+        with open('/tmp/soar_debug.log', 'a') as f:
+            f.write(f"[{datetime.now()}] checking enabled status for {integration_type}, config={config}\n")
+            f.write(f"[{datetime.now()}] config.get('enabled', False)={config.get('enabled', False)}\n")
+
+        print(f"DEBUG: checking enabled status for {integration_type}, config={config}")
+        print(f"DEBUG: config.get('enabled', False)={config.get('enabled', False)}")
+
         if not config.get('enabled', False):
+            with open('/tmp/soar_debug.log', 'a') as f:
+                f.write(f"[{datetime.now()}] Integration {integration_type} is not enabled, returning failure\n")
+            print(f"DEBUG: Integration {integration_type} is not enabled, returning failure")
             return {
                 "job_id": job_id,
                 "status": "Failed",
-                "message": f"{integration_type.capitalize()} integration is not enabled",
-                "error": "Please enable and configure the integration in Manage > Integrations"
+                "message": f"{integration_type.capitalize()} integration is not enabled - Please configure it in Manage > Integrations",
+                "error": "Integration disabled - API credentials required"
             }
 
         # Validate required configuration
         if integration_type == 'sentinelone':
-            if not config.get('base_url') or not config.get('api_token'):
+            base_url = config.get('base_url', '').strip()
+            api_token = config.get('api_token', '').strip()
+            if not base_url or not api_token:
                 return {
                     "job_id": job_id,
                     "status": "Failed",
-                    "message": "SentinelOne integration not properly configured",
-                    "error": "Missing base_url or api_token in integration settings"
+                    "message": "SentinelOne API credentials missing - Configure URL and API token in Manage > Integrations",
+                    "error": "Missing base_url or api_token - Cannot connect to SentinelOne API"
                 }
         elif integration_type == 'velociraptor':
-            if not config.get('base_url') or not config.get('api_key'):
+            base_url = config.get('base_url', '').strip()
+            api_key = config.get('api_key', '').strip()
+            if not base_url or not api_key:
                 return {
                     "job_id": job_id,
                     "status": "Failed",
-                    "message": "Velociraptor integration not properly configured",
-                    "error": "Missing base_url or api_key in integration settings"
+                    "message": "Velociraptor API credentials missing - Configure URL and API key in Manage > Integrations",
+                    "error": "Missing base_url or api_key - Cannot connect to Velociraptor API"
                 }
 
         # Execute the specific job type

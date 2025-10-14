@@ -9,7 +9,11 @@
       "WebFetch(domain:urlscan.io)",
       "Bash(cat:*)",
       "Bash(curl:*)",
-      "Bash(docker restart:*)"
+      "Bash(docker restart:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker cp:*)",
+      "Bash(docker logs:*)",
+      "Bash(winpty docker exec -i iriswebapp_worker find /iriswebapp -name \"*.py\" -exec grep -l \"@celery.task\" {} ;)"
     ],
     "deny": [],
     "ask": []
