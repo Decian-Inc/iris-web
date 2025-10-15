@@ -59,6 +59,36 @@
         .sentinelone-icon {
             color: #3498db;
         }
+        .toggle-container {
+            margin: 15px 0;
+        }
+        .custom-switch {
+            padding-left: 2.25rem;
+        }
+        .custom-switch .custom-control-label::before {
+            width: 2rem;
+            height: 1.25rem;
+            background-color: #adb5bd;
+            border-radius: 0.75rem;
+            transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .custom-switch .custom-control-label::after {
+            width: 1rem;
+            height: 1rem;
+            background-color: #fff;
+            border-radius: 50%;
+            transition: transform 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .custom-switch .custom-control-input:checked ~ .custom-control-label::before {
+            background-color: #28a745;
+        }
+        .custom-switch .custom-control-input:checked ~ .custom-control-label::after {
+            transform: translateX(0.75rem);
+        }
+        .switch-text {
+            font-weight: 500;
+            margin-left: 10px;
+        }
     </style>
 {% endblock stylesheets %}
 
@@ -125,12 +155,14 @@
                                                     <div class="col-md-6">
                                                         <div class="form-group">
                                                             <label>Enable Integration</label>
-                                                            <div class="form-check">
-                                                                <input class="form-check-input" type="checkbox" id="vr-enabled"
-                                                                       {% if integrations.velociraptor.enabled %}checked{% endif %}>
-                                                                <label class="form-check-label" for="vr-enabled">
-                                                                    Enable Velociraptor integration
-                                                                </label>
+                                                            <div class="toggle-container">
+                                                                <div class="custom-control custom-switch">
+                                                                    <input type="checkbox" class="custom-control-input" id="vr-enabled"
+                                                                           {% if integrations.velociraptor.enabled %}checked{% endif %}>
+                                                                    <label class="custom-control-label" for="vr-enabled">
+                                                                        <span class="switch-text">Enable Velociraptor integration</span>
+                                                                    </label>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -215,12 +247,14 @@
                                                     <div class="col-md-6">
                                                         <div class="form-group">
                                                             <label>Enable Integration</label>
-                                                            <div class="form-check">
-                                                                <input class="form-check-input" type="checkbox" id="s1-enabled"
-                                                                       {% if integrations.sentinelone.enabled %}checked{% endif %}>
-                                                                <label class="form-check-label" for="s1-enabled">
-                                                                    Enable SentinelOne integration
-                                                                </label>
+                                                            <div class="toggle-container">
+                                                                <div class="custom-control custom-switch">
+                                                                    <input type="checkbox" class="custom-control-input" id="s1-enabled"
+                                                                           {% if integrations.sentinelone.enabled %}checked{% endif %}>
+                                                                    <label class="custom-control-label" for="s1-enabled">
+                                                                        <span class="switch-text">Enable SentinelOne integration</span>
+                                                                    </label>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>

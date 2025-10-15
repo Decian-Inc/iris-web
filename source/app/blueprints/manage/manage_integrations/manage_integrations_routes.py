@@ -53,6 +53,9 @@ def manage_integrations_index(caseid, url_redir):
         # Get current integration settings
         integrations_config = get_integrations_config()
 
+        # Debug output
+        log.info(f"Integration config loaded: {integrations_config}")
+
         return render_template('manage_integrations.html',
                              integrations=integrations_config)
 
@@ -130,6 +133,7 @@ def get_integrations_config():
     try:
         # Get all integration configs from database
         configs = IntegrationConfig.query.all()
+        log.info(f"Found {len(configs)} integration configs in database")
 
         # Build response dictionary
         result = {}
@@ -140,6 +144,7 @@ def get_integrations_config():
                 'enabled': config.enabled,
                 **config_data
             }
+            log.info(f"Loaded config for {config.integration_type}: enabled={config.enabled}")
 
         # Ensure default configs exist for known integrations
         default_configs = {
