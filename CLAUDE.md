@@ -8,6 +8,10 @@ IRIS (Incident Response Investigation System) is a web collaborative platform fo
 - **Docker containerized** with 5 services: app, db, rabbitmq, worker, nginx
 - **Modular design** with IrisWeb core and IrisModules extensions
 
+## SOAR Integrations
+
+- **All soar integration standards, practices, and codestyles, are located in SOAR-integration-format-style.md**
+
 ## Development Workflow
 
 ### Branching Strategy

@@ -22,6 +22,9 @@
         .integration-header.velociraptor {
             background: linear-gradient(135deg, #20c997 0%, #198754 100%);
         }
+        .integration-header.haveibeenpwned {
+            background: linear-gradient(135deg, #6f42c1 0%, #5a2d91 100%);
+        }
         .playbook-item {
             border-left: 4px solid #007bff;
             padding: 1rem;
@@ -88,6 +91,26 @@
                                     <i class="fas fa-search mr-1"></i>Velociraptor
                                 </a>
                             </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" id="connectwise-tab" data-toggle="pill" href="#connectwise" role="tab">
+                                    <i class="fas fa-ticket-alt mr-1"></i>ConnectWise
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" id="crowdstrike-tab" data-toggle="pill" href="#crowdstrike" role="tab">
+                                    <i class="fas fa-shield-virus mr-1"></i>CrowdStrike
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" id="meraki-tab" data-toggle="pill" href="#meraki" role="tab">
+                                    <i class="fas fa-network-wired mr-1"></i>Cisco Meraki
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" id="hibp-tab" data-toggle="pill" href="#hibp" role="tab">
+                                    <i class="fas fa-user-secret mr-1"></i>HaveIBeenPwned
+                                </a>
+                            </li>
                         </ul>
 
                         <!-- Tab Content -->
@@ -119,6 +142,25 @@
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
+                                                <div class="card border-danger">
+                                                    <div class="card-header bg-danger text-white">
+                                                        <h5 class="mb-0"><i class="fas fa-shield-virus mr-2"></i>CrowdStrike Integration</h5>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <p>Cloud-native endpoint protection and threat intelligence platform.</p>
+                                                        <ul class="list-unstyled">
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Host containment and isolation</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Detection and incident retrieval</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Host information gathering</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Network containment management</li>
+                                                        </ul>
+                                                        <span class="badge badge-danger">Ready for Playbooks</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-4">
+                                            <div class="col-md-6">
                                                 <div class="card border-success">
                                                     <div class="card-header bg-success text-white">
                                                         <h5 class="mb-0"><i class="fas fa-search mr-2"></i>Velociraptor Integration</h5>
@@ -132,6 +174,60 @@
                                                             <li><i class="fas fa-check text-success mr-2"></i>Registry analysis</li>
                                                         </ul>
                                                         <span class="badge badge-success">1 Playbook Available</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="card border-warning">
+                                                    <div class="card-header bg-warning text-dark">
+                                                        <h5 class="mb-0"><i class="fas fa-ticket-alt mr-2"></i>ConnectWise Integration</h5>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <p>Professional Services Automation and CRM platform.</p>
+                                                        <ul class="list-unstyled">
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Ticket creation automation</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Case-to-ticket linking</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Board-specific routing</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Full case context transfer</li>
+                                                        </ul>
+                                                        <span class="badge badge-warning">Ready for Playbooks</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row mt-4">
+                                            <div class="col-md-6 mx-auto">
+                                                <div class="card border-info">
+                                                    <div class="card-header bg-info text-white">
+                                                        <h5 class="mb-0"><i class="fas fa-network-wired mr-2"></i>Cisco Meraki Integration</h5>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <p>Network control and IP blocking through Meraki Dashboard API.</p>
+                                                        <ul class="list-unstyled">
+                                                            <li><i class="fas fa-check text-success mr-2"></i>IP address blocking via firewall</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Client isolation and blocking</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Network event verification</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Multi-network management</li>
+                                                        </ul>
+                                                        <span class="badge badge-info">3 Playbooks Available</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="card border-secondary">
+                                                    <div class="card-header bg-secondary text-white">
+                                                        <h5 class="mb-0"><i class="fas fa-user-secret mr-2"></i>HaveIBeenPwned Integration</h5>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <p>Credential exposure intelligence and breach data lookup service.</p>
+                                                        <ul class="list-unstyled">
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Email address breach checking</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Domain exposure analysis</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Password reuse verification</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>k-anonymity password security</li>
+                                                        </ul>
+                                                        <span class="badge badge-secondary">3 Playbooks Available</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -366,6 +462,637 @@
                                                 <li><strong>Browser Forensics:</strong> History, downloads, and cached data from major browsers</li>
                                                 <li><strong>Event Logs:</strong> Windows Event Log parsing and analysis</li>
                                                 <li><strong>Custom Artifacts:</strong> User-defined VQL queries for specific investigation needs</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ConnectWise Tab -->
+                            <div class="tab-pane fade" id="connectwise" role="tabpanel">
+                                <div class="integration-card">
+                                    <div class="integration-header" style="background: linear-gradient(135deg, #ff6b35 0%, #e55525 100%);">
+                                        <h3><i class="fas fa-ticket-alt mr-2"></i>ConnectWise CRM Integration</h3>
+                                        <p class="mb-0">Professional Services Automation and CRM platform for ticket management</p>
+                                    </div>
+                                    <div class="card-body">
+                                        <h5><i class="fas fa-info-circle text-primary mr-2"></i>About ConnectWise CRM</h5>
+                                        <p>ConnectWise is a comprehensive Professional Services Automation (PSA) and Customer Relationship Management (CRM) platform designed for Managed Service Providers (MSPs) and IT service companies. The IRIS integration enables automated ticket creation to streamline incident response workflows.</p>
+
+                                        <h5 class="mt-4"><i class="fas fa-cog text-secondary mr-2"></i>Configuration Requirements</h5>
+                                        <ul>
+                                            <li><strong>Server URL:</strong> Your ConnectWise server URL (cloud or on-premise)</li>
+                                            <li><strong>Company ID:</strong> Your ConnectWise company identifier</li>
+                                            <li><strong>API Keys:</strong> Public and private key pair from API member</li>
+                                            <li><strong>Client ID:</strong> Unique application identifier</li>
+                                            <li><strong>Default Board:</strong> Target board name for ticket creation</li>
+                                            <li><strong>Required Permissions:</strong> Service Desk > Service Tickets - Edit and Inquire Level: All</li>
+                                        </ul>
+
+                                        <div class="alert alert-info mt-3">
+                                            <h6><i class="fas fa-info-circle mr-2"></i>API Member Setup</h6>
+                                            <p class="mb-2">Before configuring the integration, you must create an API member in ConnectWise:</p>
+                                            <ol class="mb-2">
+                                                <li>Log into ConnectWise Manage → System → Members → API Members</li>
+                                                <li>Create a new API member with appropriate security role</li>
+                                                <li>Generate API key pair (public/private keys)</li>
+                                                <li>Save both keys securely - private key is only shown once!</li>
+                                            </ol>
+                                        </div>
+
+                                        <h5 class="mt-4"><i class="fas fa-cloud text-info mr-2"></i>Cloud vs On-Premise</h5>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="card border-info">
+                                                    <div class="card-header bg-info text-white">
+                                                        <h6 class="mb-0"><i class="fas fa-cloud mr-2"></i>Cloud Instances</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <p class="mb-2"><strong>Server URLs:</strong></p>
+                                                        <ul class="mb-0">
+                                                            <li><code>https://api-na.myconnectwise.net</code> (North America)</li>
+                                                            <li><code>https://api-eu.myconnectwise.net</code> (Europe)</li>
+                                                            <li><code>https://api-au.myconnectwise.net</code> (Australia)</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="card border-secondary">
+                                                    <div class="card-header bg-secondary text-white">
+                                                        <h6 class="mb-0"><i class="fas fa-server mr-2"></i>On-Premise</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <p class="mb-2"><strong>Server URL Format:</strong></p>
+                                                        <code>https://your-server.domain.com</code>
+                                                        <p class="mt-2 mb-0">Use your organization's ConnectWise server URL</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <h5 class="mt-4"><i class="fas fa-play-circle text-success mr-2"></i>Available SOAR Capabilities</h5>
+                                        <p>The ConnectWise integration is ready for SOAR playbook development. Planned capabilities include:</p>
+
+                                        <!-- Future Playbook Placeholder -->
+                                        <div class="playbook-item" style="border-left-color: #ff6b35; background: #fff8f5;">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h6><i class="fas fa-ticket-alt mr-2"></i>Create Incident Ticket</h6>
+                                                    <p class="mb-2">Automatically create ConnectWise tickets from IRIS cases with full context transfer.</p>
+                                                    <div>
+                                                        <span class="badge badge-warning badge-custom">ticket-creation</span>
+                                                        <span class="badge badge-info badge-custom">case-integration</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 text-right">
+                                                    <small class="text-muted">Status:</small><br>
+                                                    <span class="badge badge-warning">Ready for Development</span>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <strong>Planned Features:</strong>
+                                                <ul class="mt-2 mb-2">
+                                                    <li>Create tickets in specified board with case details</li>
+                                                    <li>Transfer case timeline, evidence, and notes</li>
+                                                    <li>Set appropriate priority and categorization</li>
+                                                    <li>Link IRIS case to ConnectWise ticket for tracking</li>
+                                                </ul>
+                                                <strong>Use Cases:</strong> Incident escalation, external contractor involvement, service request creation
+                                            </div>
+                                        </div>
+
+                                        <div class="alert alert-success mt-4">
+                                            <h6><i class="fas fa-check-circle mr-2"></i>Integration Status</h6>
+                                            <p class="mb-2">The ConnectWise CRM integration framework is complete with:</p>
+                                            <ul class="mb-0">
+                                                <li><strong>Configuration Management:</strong> Full UI for API credentials and settings</li>
+                                                <li><strong>Connection Testing:</strong> Validates API connectivity and permissions</li>
+                                                <li><strong>Authentication:</strong> Secure Basic Auth with company+public:private key format</li>
+                                                <li><strong>Error Handling:</strong> Comprehensive validation and user feedback</li>
+                                                <li><strong>Documentation:</strong> Complete setup and configuration guide</li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="alert alert-warning mt-3">
+                                            <h6><i class="fas fa-exclamation-triangle mr-2"></i>Security Notes</h6>
+                                            <ul class="mb-0">
+                                                <li>API keys are stored securely and never logged in plain text</li>
+                                                <li>Private keys are only displayed once during ConnectWise key generation</li>
+                                                <li>Client ID should be treated as confidential and unique per organization</li>
+                                                <li>Verify SSL certificates are enabled by default for security</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- CrowdStrike Tab -->
+                            <div class="tab-pane fade" id="crowdstrike" role="tabpanel">
+                                <div class="integration-card">
+                                    <div class="integration-header" style="background: linear-gradient(135deg, #e01e37 0%, #b71c1c 100%);">
+                                        <h3><i class="fas fa-shield-virus mr-2"></i>CrowdStrike Falcon Integration</h3>
+                                        <p class="mb-0">Cloud-native endpoint protection and threat intelligence platform</p>
+                                    </div>
+                                    <div class="card-body">
+                                        <h5><i class="fas fa-info-circle text-primary mr-2"></i>About CrowdStrike Falcon</h5>
+                                        <p>CrowdStrike Falcon is a comprehensive cloud-native cybersecurity platform that provides endpoint protection, threat intelligence, and incident response capabilities. The IRIS integration enables automated containment, investigation, and threat hunting actions through the Falcon API.</p>
+
+                                        <h5 class="mt-4"><i class="fas fa-cog text-secondary mr-2"></i>Configuration Requirements</h5>
+                                        <ul>
+                                            <li><strong>Cloud Region:</strong> Your CrowdStrike Falcon cloud region</li>
+                                            <li><strong>Client ID:</strong> OAuth2 API client identifier</li>
+                                            <li><strong>Client Secret:</strong> OAuth2 API client secret</li>
+                                            <li><strong>Required Scopes:</strong> Hosts (read/write), Detects (read), Incidents (read)</li>
+                                        </ul>
+
+                                        <div class="alert alert-info mt-3">
+                                            <h6><i class="fas fa-info-circle mr-2"></i>API Client Setup</h6>
+                                            <p class="mb-2">Before configuring the integration, create an API client in CrowdStrike Falcon:</p>
+                                            <ol class="mb-2">
+                                                <li>Log into CrowdStrike Falcon Console → Support → API Clients and Keys</li>
+                                                <li>Create a new API client with appropriate scopes</li>
+                                                <li>Note down the Client ID and Client Secret</li>
+                                                <li>Secrets are only shown during creation - save securely!</li>
+                                            </ol>
+                                        </div>
+
+                                        <h5 class="mt-4"><i class="fas fa-cloud text-info mr-2"></i>Cloud Regions</h5>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="card border-info">
+                                                    <div class="card-header bg-info text-white">
+                                                        <h6 class="mb-0"><i class="fas fa-globe mr-2"></i>Commercial Clouds</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <ul class="mb-0">
+                                                            <li><strong>US-1:</strong> <code>api.crowdstrike.com</code></li>
+                                                            <li><strong>US-2:</strong> <code>api.us-2.crowdstrike.com</code></li>
+                                                            <li><strong>EU-1:</strong> <code>api.eu-1.crowdstrike.com</code></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="card border-secondary">
+                                                    <div class="card-header bg-secondary text-white">
+                                                        <h6 class="mb-0"><i class="fas fa-shield-alt mr-2"></i>Government Cloud</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <ul class="mb-0">
+                                                            <li><strong>US-GOV-1:</strong> <code>api.laggar.gcw.crowdstrike.com</code></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <h5 class="mt-4"><i class="fas fa-play-circle text-success mr-2"></i>Available SOAR Capabilities</h5>
+                                        <p>The CrowdStrike integration is ready for SOAR playbook development. Planned capabilities include:</p>
+
+                                        <!-- Contain Host Playbook -->
+                                        <div class="playbook-item containment">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h6><i class="fas fa-ban mr-2"></i>Contain Host (Network Isolation)</h6>
+                                                    <p class="mb-2">Isolate a compromised endpoint from the network to prevent lateral movement.</p>
+                                                    <div>
+                                                        <span class="badge badge-danger badge-custom">containment</span>
+                                                        <span class="badge badge-warning badge-custom">requires-approval</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 text-right">
+                                                    <small class="text-muted">API Endpoint:</small><br>
+                                                    <code>/devices/entities/network-contain/v1</code>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <strong>What it does:</strong>
+                                                <ol class="mt-2 mb-2">
+                                                    <li>Locates target host by hostname or device ID</li>
+                                                    <li>Executes network containment via CrowdStrike API</li>
+                                                    <li>Polls containment status until confirmed</li>
+                                                    <li>Saves containment proof as case artifact</li>
+                                                </ol>
+                                                <strong>Use Cases:</strong> Active malware containment, compromised host isolation, incident response containment
+                                            </div>
+                                        </div>
+
+                                        <!-- Lift Containment Playbook -->
+                                        <div class="playbook-item forensics">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h6><i class="fas fa-unlock mr-2"></i>Lift Containment (Release Host)</h6>
+                                                    <p class="mb-2">Reconnect a previously isolated host after remediation.</p>
+                                                    <div>
+                                                        <span class="badge badge-success badge-custom">recovery</span>
+                                                        <span class="badge badge-info badge-custom">post-incident</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 text-right">
+                                                    <small class="text-muted">API Endpoint:</small><br>
+                                                    <code>/devices/entities/network-containments/v1</code>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <strong>What it does:</strong>
+                                                <ol class="mt-2 mb-2">
+                                                    <li>Removes network isolation from specified host</li>
+                                                    <li>Polls containment status until "normal"</li>
+                                                    <li>Documents restoration in case timeline</li>
+                                                    <li>Confirms full network connectivity restored</li>
+                                                </ol>
+                                                <strong>Use Cases:</strong> Post-remediation recovery, incident closure, false positive correction
+                                            </div>
+                                        </div>
+
+                                        <!-- Fetch Host Information Playbook -->
+                                        <div class="playbook-item forensics">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h6><i class="fas fa-desktop mr-2"></i>Fetch Host Information</h6>
+                                                    <p class="mb-2">Pull complete device metadata for investigation enrichment.</p>
+                                                    <div>
+                                                        <span class="badge badge-success badge-custom">forensics</span>
+                                                        <span class="badge badge-info badge-custom">enrichment</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 text-right">
+                                                    <small class="text-muted">API Endpoint:</small><br>
+                                                    <code>/devices/entities/devices/v2</code>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <strong>What it does:</strong>
+                                                <ol class="mt-2 mb-2">
+                                                    <li>Retrieves comprehensive device metadata</li>
+                                                    <li>Includes hostname, IPs, MACs, OS, sensor version</li>
+                                                    <li>Documents last seen, policy group, and status</li>
+                                                    <li>Saves complete host profile as JSON artifact</li>
+                                                </ol>
+                                                <strong>Use Cases:</strong> Asset inventory, incident scoping, system profiling
+                                            </div>
+                                        </div>
+
+                                        <!-- Fetch Detections Playbook -->
+                                        <div class="playbook-item forensics">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h6><i class="fas fa-exclamation-triangle mr-2"></i>Fetch Detections</h6>
+                                                    <p class="mb-2">Retrieve all detections related to a host, user, or timeframe.</p>
+                                                    <div>
+                                                        <span class="badge badge-success badge-custom">forensics</span>
+                                                        <span class="badge badge-primary badge-custom">threat-hunting</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 text-right">
+                                                    <small class="text-muted">API Endpoint:</small><br>
+                                                    <code>/detects/queries/detects/v1</code>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <strong>What it does:</strong>
+                                                <ol class="mt-2 mb-2">
+                                                    <li>Queries detections for specified host or timeframe</li>
+                                                    <li>Retrieves full detection details and context</li>
+                                                    <li>Summarizes top threats and tactics</li>
+                                                    <li>Stores comprehensive detection report</li>
+                                                </ol>
+                                                <strong>Use Cases:</strong> Threat analysis, incident correlation, attack timeline reconstruction
+                                            </div>
+                                        </div>
+
+                                        <!-- Fetch Incident Details Playbook -->
+                                        <div class="playbook-item forensics">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h6><i class="fas fa-clipboard-list mr-2"></i>Fetch Incident Details</h6>
+                                                    <p class="mb-2">Enrich IRIS case with information from linked CrowdStrike Incident ID.</p>
+                                                    <div>
+                                                        <span class="badge badge-success badge-custom">forensics</span>
+                                                        <span class="badge badge-info badge-custom">case-enrichment</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 text-right">
+                                                    <small class="text-muted">API Endpoint:</small><br>
+                                                    <code>/incidents/entities/incidents/v1</code>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <strong>What it does:</strong>
+                                                <ol class="mt-2 mb-2">
+                                                    <li>Retrieves full incident details from CrowdStrike</li>
+                                                    <li>Includes status, severity, assigned analyst, tags</li>
+                                                    <li>Maps linked detections and affected hosts</li>
+                                                    <li>Synchronizes incident timeline with IRIS case</li>
+                                                </ol>
+                                                <strong>Use Cases:</strong> Case synchronization, incident correlation, analyst handoff
+                                            </div>
+                                        </div>
+
+                                        <div class="alert alert-success mt-4">
+                                            <h6><i class="fas fa-check-circle mr-2"></i>Integration Status</h6>
+                                            <p class="mb-2">The CrowdStrike Falcon integration framework is complete with:</p>
+                                            <ul class="mb-0">
+                                                <li><strong>OAuth2 Authentication:</strong> Secure client credentials flow with 30-minute tokens</li>
+                                                <li><strong>Cloud Region Support:</strong> US-1, US-2, EU-1, and US-GOV-1 regions</li>
+                                                <li><strong>Connection Testing:</strong> Real API validation with proper error handling</li>
+                                                <li><strong>Configuration Management:</strong> Complete UI for credentials and settings</li>
+                                                <li><strong>Documentation:</strong> Comprehensive setup and usage guide</li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="alert alert-warning mt-3">
+                                            <h6><i class="fas fa-exclamation-triangle mr-2"></i>Security & API Notes</h6>
+                                            <ul class="mb-0">
+                                                <li>OAuth2 tokens expire every 30 minutes and auto-refresh</li>
+                                                <li>Client secrets are only shown once during API client creation</li>
+                                                <li>Containment actions require specific API scopes and approval workflows</li>
+                                                <li>Rate limiting applies to all API endpoints - respect throttling responses</li>
+                                                <li>Falcon Administrator role required to create API clients</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cisco Meraki Tab -->
+                            <div class="tab-pane fade" id="meraki" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h3><i class="fas fa-network-wired text-info mr-2"></i>Cisco Meraki Dashboard API Integration</h3>
+                                        <p class="lead">IRIS integrates with Cisco Meraki Dashboard API to provide network control and IP blocking capabilities across your managed infrastructure.</p>
+
+                                        <div class="alert alert-info">
+                                            <h6><i class="fas fa-info-circle mr-2"></i>Integration Overview</h6>
+                                            <p class="mb-0">This integration enables IRIS to automatically block malicious IPs and isolate compromised clients through Meraki firewall rules and client policies. Perfect for network-level containment and threat response.</p>
+                                        </div>
+
+                                        <h4><i class="fas fa-cogs mr-2"></i>Available SOAR Playbooks</h4>
+
+                                        <!-- Block IP Playbook -->
+                                        <div class="card mb-4">
+                                            <div class="card-header bg-danger text-white">
+                                                <h5 class="mb-0"><i class="fas fa-ban mr-2"></i>Block IP Address</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-8">
+                                                        <h6>Purpose</h6>
+                                                        <p>Block outbound or inbound communication with a malicious IP from Meraki firewall across all networks in your organization.</p>
+
+                                                        <h6>Workflow</h6>
+                                                        <ol>
+                                                            <li>Analyst selects "Block IP on Meraki" from SOAR tab</li>
+                                                            <li>IRIS retrieves all networks with MX appliances in the organization</li>
+                                                            <li>Creates firewall rule: <code>DENY any → {malicious_ip} any</code></li>
+                                                            <li>Applies rule to all appliance networks with highest priority</li>
+                                                            <li>Saves enforcement details to artifacts</li>
+                                                        </ol>
+
+                                                        <h6>Artifact Storage</h6>
+                                                        <p><code>/cases/{case_id}/artifacts/meraki/block_{ip}_{timestamp}.json</code></p>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="bg-light p-3 rounded">
+                                                            <h6><i class="fas fa-code mr-2"></i>API Endpoint</h6>
+                                                            <code>PUT /networks/{networkId}/appliance/firewall/l3FirewallRules</code>
+
+                                                            <h6 class="mt-3"><i class="fas fa-tag mr-2"></i>Tags</h6>
+                                                            <span class="badge badge-danger">Containment</span>
+                                                            <span class="badge badge-warning">Requires Approval</span>
+
+                                                            <h6 class="mt-3"><i class="fas fa-clock mr-2"></i>Duration</h6>
+                                                            <p class="small mb-0">~30-60 seconds per network</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Block Client Playbook -->
+                                        <div class="card mb-4">
+                                            <div class="card-header bg-warning text-dark">
+                                                <h5 class="mb-0"><i class="fas fa-user-slash mr-2"></i>Block Client</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-8">
+                                                        <h6>Purpose</h6>
+                                                        <p>Isolate a specific host by MAC or IP using Meraki client policy to prevent network access.</p>
+
+                                                        <h6>Workflow</h6>
+                                                        <ol>
+                                                            <li>Analyst provides IP address or MAC address of target client</li>
+                                                            <li>IRIS searches all networks for the specified client</li>
+                                                            <li>Sets client policy to "Blocked" to prevent network access</li>
+                                                            <li>Logs client details including switch and network information</li>
+                                                            <li>Saves blocking confirmation to artifacts</li>
+                                                        </ol>
+
+                                                        <h6>Artifact Storage</h6>
+                                                        <p><code>/cases/{case_id}/artifacts/meraki/block_client_{target}_{timestamp}.json</code></p>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="bg-light p-3 rounded">
+                                                            <h6><i class="fas fa-code mr-2"></i>API Endpoint</h6>
+                                                            <code>PUT /networks/{networkId}/clients/{clientId}/policy</code>
+
+                                                            <h6 class="mt-3"><i class="fas fa-tag mr-2"></i>Tags</h6>
+                                                            <span class="badge badge-warning">Isolation</span>
+                                                            <span class="badge badge-danger">Requires Approval</span>
+
+                                                            <h6 class="mt-3"><i class="fas fa-clock mr-2"></i>Duration</h6>
+                                                            <p class="small mb-0">~15-30 seconds</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Verify Network Event Playbook -->
+                                        <div class="card mb-4">
+                                            <div class="card-header bg-success text-white">
+                                                <h5 class="mb-0"><i class="fas fa-search mr-2"></i>Verify Network Event</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-8">
+                                                        <h6>Purpose</h6>
+                                                        <p>Confirm enforcement by fetching Meraki event logs to verify blocking has taken effect.</p>
+
+                                                        <h6>Workflow</h6>
+                                                        <ol>
+                                                            <li>Analyst requests verification for a specific IP address</li>
+                                                            <li>IRIS queries event logs from all appliance networks</li>
+                                                            <li>Filters events for the target IP in firewall logs</li>
+                                                            <li>Collects blocking confirmations and denied connection attempts</li>
+                                                            <li>Stores proof of enforcement as JSON artifacts</li>
+                                                        </ol>
+
+                                                        <h6>Artifact Storage</h6>
+                                                        <p><code>/cases/{case_id}/artifacts/meraki/verify_{ip}_{timestamp}.json</code></p>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="bg-light p-3 rounded">
+                                                            <h6><i class="fas fa-code mr-2"></i>API Endpoint</h6>
+                                                            <code>GET /networks/{networkId}/events</code>
+
+                                                            <h6 class="mt-3"><i class="fas fa-tag mr-2"></i>Tags</h6>
+                                                            <span class="badge badge-success">Verification</span>
+                                                            <span class="badge badge-info">Forensics</span>
+
+                                                            <h6 class="mt-3"><i class="fas fa-clock mr-2"></i>Duration</h6>
+                                                            <p class="small mb-0">~10-20 seconds</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="alert alert-warning mt-3">
+                                            <h6><i class="fas fa-exclamation-triangle mr-2"></i>Setup Requirements</h6>
+                                            <ul class="mb-0">
+                                                <li><strong>Dashboard API Access:</strong> Enable API access in Organization → Settings → Dashboard API access</li>
+                                                <li><strong>API Key:</strong> Generate API key with full organization access</li>
+                                                <li><strong>Organization ID:</strong> Obtain from Dashboard URL or API call to /organizations</li>
+                                                <li><strong>MX Appliances:</strong> At least one MX device required for firewall rule management</li>
+                                                <li><strong>Network Topology:</strong> Ensure proper VLAN and firewall rule hierarchy</li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="alert alert-info mt-3">
+                                            <h6><i class="fas fa-info-circle mr-2"></i>Network Architecture Notes</h6>
+                                            <ul class="mb-0">
+                                                <li>Firewall rules are applied at the network level (per MX appliance)</li>
+                                                <li>New rules are inserted at the top for highest priority enforcement</li>
+                                                <li>Client blocking uses device policy for immediate network isolation</li>
+                                                <li>Event logs provide verification of rule enforcement effectiveness</li>
+                                                <li>Rate limiting applies - respect API throttling responses</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- HaveIBeenPwned Tab -->
+                            <div class="tab-pane fade" id="hibp" role="tabpanel">
+                                <div class="integration-card">
+                                    <div class="integration-header haveibeenpwned">
+                                        <h3><i class="fas fa-user-secret mr-2"></i>HaveIBeenPwned</h3>
+                                        <p class="mb-0">Credential exposure intelligence and breach data lookup service</p>
+                                    </div>
+                                    <div class="card-body">
+                                        <h5><i class="fas fa-info-circle text-primary mr-2"></i>About HaveIBeenPwned</h5>
+                                        <p>HaveIBeenPwned (HIBP) provides API endpoints to check if an email address, domain, or password hash appears in known breach datasets. This adds user compromise context to IRIS cases — ideal for business email compromise or account investigation.</p>
+
+                                        <h5 class="mt-4"><i class="fas fa-cog text-secondary mr-2"></i>Configuration Requirements</h5>
+                                        <ul>
+                                            <li><strong>API Key:</strong> Valid HIBP API key (obtain from haveibeenpwned.com)</li>
+                                            <li><strong>API Base URL:</strong> https://haveibeenpwned.com/api/v3 (default)</li>
+                                            <li><strong>Rate Limiting:</strong> Minimum 1.5 seconds between API calls</li>
+                                            <li><strong>Required Permissions:</strong> Search breached accounts and domain breaches</li>
+                                        </ul>
+
+                                        <h5 class="mt-4"><i class="fas fa-play-circle text-success mr-2"></i>Available SOAR Playbooks</h5>
+
+                                        <!-- Email Check Playbook -->
+                                        <div class="playbook-item forensics">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h6><i class="fas fa-envelope mr-2"></i>Email Exposure Check</h6>
+                                                    <p class="mb-2">Determine if an email address in a case appears in any data breaches.</p>
+                                                    <div>
+                                                        <span class="badge badge-success badge-custom">forensics</span>
+                                                        <span class="badge badge-info badge-custom">credential-intelligence</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 text-right">
+                                                    <small class="text-muted">Template ID:</small><br>
+                                                    <code>hibp-email-check</code>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <strong>What it does:</strong>
+                                                <ol class="mt-2 mb-2">
+                                                    <li>Calls GET /breachedaccount/{email} with HIBP API key</li>
+                                                    <li>Parses breach data and counts exposures</li>
+                                                    <li>Stores JSON output as case artifact</li>
+                                                    <li>Adds case note with breach summary</li>
+                                                </ol>
+                                                <strong>Use Cases:</strong> Business email compromise investigation, user account security assessment
+                                            </div>
+                                        </div>
+
+                                        <!-- Domain Check Playbook -->
+                                        <div class="playbook-item forensics">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h6><i class="fas fa-globe mr-2"></i>Domain Exposure Check</h6>
+                                                    <p class="mb-2">Identify if any company-owned domains have appeared in breaches.</p>
+                                                    <div>
+                                                        <span class="badge badge-success badge-custom">forensics</span>
+                                                        <span class="badge badge-info badge-custom">credential-intelligence</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 text-right">
+                                                    <small class="text-muted">Template ID:</small><br>
+                                                    <code>hibp-domain-check</code>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <strong>What it does:</strong>
+                                                <ol class="mt-2 mb-2">
+                                                    <li>Calls GET /breaches?domain={domain} with HIBP API key</li>
+                                                    <li>Retrieves all breaches affecting the domain</li>
+                                                    <li>Creates breach summary table with dates and counts</li>
+                                                    <li>Logs results as Markdown table in case note</li>
+                                                </ol>
+                                                <strong>Use Cases:</strong> Organization security assessment, domain risk evaluation
+                                            </div>
+                                        </div>
+
+                                        <!-- Password Check Playbook -->
+                                        <div class="playbook-item forensics">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h6><i class="fas fa-key mr-2"></i>Password Reuse Check</h6>
+                                                    <p class="mb-2">Verify if a password hash appears in known compromised password datasets using k-anonymity.</p>
+                                                    <div>
+                                                        <span class="badge badge-success badge-custom">forensics</span>
+                                                        <span class="badge badge-warning badge-custom">password-security</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 text-right">
+                                                    <small class="text-muted">Template ID:</small><br>
+                                                    <code>hibp-password-check</code>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <strong>What it does:</strong>
+                                                <ol class="mt-2 mb-2">
+                                                    <li>Hashes password using SHA-1 (if not already hashed)</li>
+                                                    <li>Uses k-anonymity: sends only first 5 chars to API</li>
+                                                    <li>Calls GET /range/{prefix} to get candidate hashes</li>
+                                                    <li>Locally matches full hash to avoid password disclosure</li>
+                                                </ol>
+                                                <strong>Use Cases:</strong> Password security assessment, credential compromise analysis
+                                                <br><strong>Security:</strong> Full password never transmitted to API
+                                            </div>
+                                        </div>
+
+                                        <div class="alert alert-warning mt-4">
+                                            <h6><i class="fas fa-exclamation-triangle mr-2"></i>API Rate Limiting</h6>
+                                            <p class="mb-0">HIBP enforces rate limiting. The integration includes a configurable delay (default: 1.6 seconds) between API calls to respect these limits. Adjust the rate limit delay in integration settings if needed.</p>
+                                        </div>
+
+                                        <div class="alert alert-info mt-3">
+                                            <h6><i class="fas fa-database mr-2"></i>File Storage Convention</h6>
+                                            <p class="mb-0">All HIBP results are stored in case artifacts following the pattern:</p>
+                                            <ul class="mb-0 mt-2">
+                                                <li><code>/cases/{case_id}/artifacts/hibp/hibp_email_{email}_{job_id}.json</code></li>
+                                                <li><code>/cases/{case_id}/artifacts/hibp/hibp_domain_{domain}_{job_id}.json</code></li>
+                                                <li><code>/cases/{case_id}/artifacts/hibp/hibp_password_check_{job_id}.json</code></li>
                                             </ul>
                                         </div>
                                     </div>

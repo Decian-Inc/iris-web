@@ -115,6 +115,14 @@ def test_integration_connection():
             result = test_velociraptor_connection(config)
         elif integration_type == 'sentinelone':
             result = test_sentinelone_connection(config)
+        elif integration_type == 'connectwise':
+            result = test_connectwise_connection(config)
+        elif integration_type == 'crowdstrike':
+            result = test_crowdstrike_connection(config)
+        elif integration_type == 'meraki':
+            result = test_meraki_connection(config)
+        elif integration_type == 'haveibeenpwned':
+            result = test_haveibeenpwned_connection(config)
         else:
             return response_error("Unsupported integration type")
 
@@ -161,6 +169,37 @@ def get_integrations_config():
                 'api_token': '',
                 'verify_ssl': True,
                 'site_id': ''
+            },
+            'connectwise': {
+                'enabled': False,
+                'base_url': '',
+                'company_id': '',
+                'public_key': '',
+                'private_key': '',
+                'client_id': '',
+                'default_board': '',
+                'verify_ssl': True
+            },
+            'crowdstrike': {
+                'enabled': False,
+                'base_url': '',
+                'client_id': '',
+                'client_secret': '',
+                'cloud_region': 'us-1',
+                'verify_ssl': True
+            },
+            'meraki': {
+                'enabled': False,
+                'api_key': '',
+                'organization_id': '',
+                'verify_ssl': True
+            },
+            'haveibeenpwned': {
+                'enabled': False,
+                'api_key': '',
+                'base_url': 'https://haveibeenpwned.com/api/v3',
+                'verify_ssl': True,
+                'rate_limit_delay': 1.6
             }
         }
 
@@ -273,3 +312,366 @@ def test_sentinelone_connection(config):
 
     except Exception as e:
         return {'success': False, 'message': f'Connection failed: {str(e)}'}
+
+
+def test_connectwise_connection(config):
+    """
+    Test ConnectWise CRM connection
+    """
+    try:
+        import requests
+        import base64
+
+        base_url = config.get('base_url', '').rstrip('/')
+        company_id = config.get('company_id')
+        public_key = config.get('public_key')
+        private_key = config.get('private_key')
+        client_id = config.get('client_id')
+
+        # Validate required fields
+        required_fields = ['base_url', 'company_id', 'public_key', 'private_key', 'client_id']
+        missing_fields = [field for field in required_fields if not config.get(field)]
+
+        if missing_fields:
+            return {
+                'success': False,
+                'message': f'Missing required configuration: {", ".join(missing_fields)}'
+            }
+
+        # Construct API endpoint - test with company info endpoint
+        if 'api-na.myconnectwise.net' in base_url or 'api-eu.myconnectwise.net' in base_url:
+            # Cloud instance
+            api_endpoint = f"{base_url}/v4_6_release/apis/3.0/company/info"
+        else:
+            # On-premise instance
+            api_endpoint = f"{base_url}/v4_6_release/apis/3.0/company/info"
+
+        # Set up Basic Auth - format: company+public_key:private_key
+        auth_string = f"{company_id}+{public_key}:{private_key}"
+        auth_bytes = auth_string.encode('ascii')
+        auth_b64 = base64.b64encode(auth_bytes).decode('ascii')
+
+        headers = {
+            'Authorization': f'Basic {auth_b64}',
+            'Content-Type': 'application/json',
+            'clientId': client_id
+        }
+
+        # Test connection with timeout
+        response = requests.get(
+            api_endpoint,
+            headers=headers,
+            verify=config.get('verify_ssl', True),
+            timeout=10
+        )
+
+        if response.status_code == 200:
+            company_info = response.json()
+            return {
+                'success': True,
+                'message': 'Connection test successful',
+                'company_name': company_info.get('companyName', 'Unknown'),
+                'company_identifier': company_info.get('companyIdentifier', company_id),
+                'response_time': f'{response.elapsed.total_seconds()*1000:.0f}ms'
+            }
+        elif response.status_code == 401:
+            return {
+                'success': False,
+                'message': 'Authentication failed - check credentials'
+            }
+        elif response.status_code == 403:
+            return {
+                'success': False,
+                'message': 'Access forbidden - check API member permissions'
+            }
+        else:
+            return {
+                'success': False,
+                'message': f'API returned status {response.status_code}: {response.text[:200]}'
+            }
+
+    except requests.exceptions.Timeout:
+        return {'success': False, 'message': 'Connection timeout - check server URL'}
+    except requests.exceptions.ConnectionError:
+        return {'success': False, 'message': 'Connection failed - check server URL and network'}
+    except Exception as e:
+        return {'success': False, 'message': f'Connection test failed: {str(e)}'}
+
+
+def test_crowdstrike_connection(config):
+    """
+    Test CrowdStrike Falcon API connection using OAuth2
+    """
+    try:
+        import requests
+
+        base_url = config.get('base_url', '').rstrip('/')
+        client_id = config.get('client_id')
+        client_secret = config.get('client_secret')
+        cloud_region = config.get('cloud_region', 'us-1')
+
+        # Validate required fields
+        if not client_id or not client_secret:
+            return {
+                'success': False,
+                'message': 'Missing required configuration: client_id and client_secret'
+            }
+
+        # Determine base URL from cloud region if not provided
+        if not base_url:
+            region_map = {
+                'us-1': 'https://api.crowdstrike.com',
+                'us-2': 'https://api.us-2.crowdstrike.com',
+                'eu-1': 'https://api.eu-1.crowdstrike.com',
+                'us-gov-1': 'https://api.laggar.gcw.crowdstrike.com'
+            }
+            base_url = region_map.get(cloud_region, 'https://api.crowdstrike.com')
+
+        # Step 1: Get OAuth2 token
+        token_endpoint = f"{base_url}/oauth2/token"
+        token_headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json'
+        }
+        token_data = {
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'grant_type': 'client_credentials'
+        }
+
+        # Request access token
+        token_response = requests.post(
+            token_endpoint,
+            headers=token_headers,
+            data=token_data,
+            verify=config.get('verify_ssl', True),
+            timeout=10
+        )
+
+        if token_response.status_code != 200:
+            if token_response.status_code == 401:
+                return {
+                    'success': False,
+                    'message': 'Authentication failed - check client credentials'
+                }
+            elif token_response.status_code == 403:
+                return {
+                    'success': False,
+                    'message': 'Access forbidden - check API client permissions'
+                }
+            else:
+                return {
+                    'success': False,
+                    'message': f'OAuth2 token request failed: {token_response.status_code}'
+                }
+
+        token_data = token_response.json()
+        access_token = token_data.get('access_token')
+
+        if not access_token:
+            return {
+                'success': False,
+                'message': 'No access token received from OAuth2 endpoint'
+            }
+
+        # Step 2: Test API access with sensor status endpoint
+        api_headers = {
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json'
+        }
+
+        # Use a lightweight endpoint to test connectivity
+        test_endpoint = f"{base_url}/sensors/queries/installers/v1"
+        api_response = requests.get(
+            test_endpoint,
+            headers=api_headers,
+            verify=config.get('verify_ssl', True),
+            timeout=10
+        )
+
+        if api_response.status_code == 200:
+            return {
+                'success': True,
+                'message': 'Connection test successful',
+                'cloud_region': cloud_region,
+                'base_url': base_url,
+                'token_expires_in': token_data.get('expires_in', 1800),
+                'response_time': f'{token_response.elapsed.total_seconds()*1000:.0f}ms'
+            }
+        elif api_response.status_code == 401:
+            return {
+                'success': False,
+                'message': 'API access denied - check client permissions'
+            }
+        elif api_response.status_code == 403:
+            return {
+                'success': False,
+                'message': 'Insufficient permissions - check API client scope'
+            }
+        else:
+            return {
+                'success': False,
+                'message': f'API test failed with status {api_response.status_code}'
+            }
+
+    except requests.exceptions.Timeout:
+        return {'success': False, 'message': 'Connection timeout - check network connectivity'}
+    except requests.exceptions.ConnectionError:
+        return {'success': False, 'message': 'Connection failed - check base URL and network'}
+    except Exception as e:
+        return {'success': False, 'message': f'Connection test failed: {str(e)}'}
+
+
+def test_meraki_connection(config):
+    """
+    Test Cisco Meraki Dashboard API connection
+    """
+    try:
+        import requests
+
+        api_key = config.get('api_key', '').strip()
+        organization_id = config.get('organization_id', '').strip()
+        verify_ssl = config.get('verify_ssl', True)
+
+        # Validate required fields
+        if not api_key:
+            return {
+                'success': False,
+                'message': 'Missing required API key'
+            }
+
+        if not organization_id:
+            return {
+                'success': False,
+                'message': 'Missing required Organization ID'
+            }
+
+        # Meraki Dashboard API base URL
+        base_url = 'https://api.meraki.com/api/v1'
+
+        # Test endpoint - get organization details
+        test_url = f"{base_url}/organizations/{organization_id}"
+
+        headers = {
+            'X-Cisco-Meraki-API-Key': api_key,
+            'Content-Type': 'application/json'
+        }
+
+        # Test connection with timeout
+        response = requests.get(
+            test_url,
+            headers=headers,
+            verify=verify_ssl,
+            timeout=10
+        )
+
+        if response.status_code == 200:
+            org_data = response.json()
+            return {
+                'success': True,
+                'message': 'Connection test successful',
+                'organization_name': org_data.get('name', 'Unknown'),
+                'organization_id': organization_id,
+                'response_time': f'{response.elapsed.total_seconds()*1000:.0f}ms'
+            }
+        elif response.status_code == 401:
+            return {
+                'success': False,
+                'message': 'Invalid API key - check your Meraki Dashboard API key'
+            }
+        elif response.status_code == 403:
+            return {
+                'success': False,
+                'message': 'Insufficient permissions - check API key permissions'
+            }
+        elif response.status_code == 404:
+            return {
+                'success': False,
+                'message': 'Organization not found - check Organization ID'
+            }
+        else:
+            return {
+                'success': False,
+                'message': f'API test failed with status {response.status_code}: {response.text}'
+            }
+
+    except requests.exceptions.Timeout:
+        return {'success': False, 'message': 'Connection timeout - check network connectivity'}
+    except requests.exceptions.ConnectionError:
+        return {'success': False, 'message': 'Connection failed - check network connectivity'}
+    except Exception as e:
+        return {'success': False, 'message': f'Connection test failed: {str(e)}'}
+
+
+def test_haveibeenpwned_connection(config):
+    """
+    Test HaveIBeenPwned API connection
+    """
+    try:
+        import requests
+        import time
+
+        api_key = config.get('api_key', '').strip()
+        base_url = config.get('base_url', 'https://haveibeenpwned.com/api/v3').rstrip('/')
+        verify_ssl = config.get('verify_ssl', True)
+
+        # Validate required fields
+        if not api_key:
+            return {
+                'success': False,
+                'message': 'Missing required API key'
+            }
+
+        # Test endpoint - use the breaches endpoint with a small query
+        test_url = f"{base_url}/breaches"
+
+        headers = {
+            'hibp-api-key': api_key,
+            'User-Agent': 'IRIS-SOAR'
+        }
+
+        # Test connection with timeout and rate limiting
+        response = requests.get(
+            test_url,
+            headers=headers,
+            verify=verify_ssl,
+            timeout=10
+        )
+
+        if response.status_code == 200:
+            breaches_data = response.json()
+            breach_count = len(breaches_data) if isinstance(breaches_data, list) else 0
+            return {
+                'success': True,
+                'message': 'Connection test successful',
+                'total_breaches': breach_count,
+                'api_version': 'v3',
+                'response_time': f'{response.elapsed.total_seconds()*1000:.0f}ms'
+            }
+        elif response.status_code == 401:
+            return {
+                'success': False,
+                'message': 'Invalid API key - check your HIBP API key'
+            }
+        elif response.status_code == 403:
+            return {
+                'success': False,
+                'message': 'Access forbidden - check API key permissions'
+            }
+        elif response.status_code == 429:
+            return {
+                'success': False,
+                'message': 'Rate limit exceeded - please wait before testing again'
+            }
+        else:
+            return {
+                'success': False,
+                'message': f'API test failed with status {response.status_code}: {response.text}'
+            }
+
+    except requests.exceptions.Timeout:
+        return {'success': False, 'message': 'Connection timeout - check network connectivity'}
+    except requests.exceptions.ConnectionError:
+        return {'success': False, 'message': 'Connection failed - check network connectivity'}
+    except Exception as e:
+        return {'success': False, 'message': f'Connection test failed: {str(e)}'}

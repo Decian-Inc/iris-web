@@ -59,6 +59,15 @@
         .sentinelone-icon {
             color: #3498db;
         }
+        .connectwise-icon {
+            color: #ff6b35;
+        }
+        .crowdstrike-icon {
+            color: #e01e37;
+        }
+        .haveibeenpwned-icon {
+            color: #6f42c1;
+        }
         .toggle-container {
             margin: 15px 0;
         }
@@ -315,6 +324,439 @@
                                             </form>
                                         </div>
                                     </div>
+
+                                    <!-- ConnectWise Integration -->
+                                    <div class="integration-card">
+                                        <div class="integration-header">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-ticket-alt connectwise-icon integration-icon"></i>
+                                                    <div>
+                                                        <h5 class="mb-1">ConnectWise CRM</h5>
+                                                        <small class="text-muted">Professional Services Automation and CRM platform</small>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <span class="status-badge {% if integrations.connectwise.enabled %}status-enabled{% else %}status-disabled{% endif %}">
+                                                        {% if integrations.connectwise.enabled %}Enabled{% else %}Disabled{% endif %}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="integration-body">
+                                            <form id="connectwise-form">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Enable Integration</label>
+                                                            <div class="toggle-container">
+                                                                <div class="custom-control custom-switch">
+                                                                    <input type="checkbox" class="custom-control-input" id="cw-enabled"
+                                                                           {% if integrations.connectwise.enabled %}checked{% endif %}>
+                                                                    <label class="custom-control-label" for="cw-enabled">
+                                                                        <span class="switch-text">Enable ConnectWise integration</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="cw-base-url">Server URL <span class="text-danger">*</span></label>
+                                                            <input type="url" class="form-control" id="cw-base-url"
+                                                                   placeholder="https://api-na.myconnectwise.net"
+                                                                   value="{{ integrations.connectwise.base_url }}">
+                                                            <small class="form-text text-muted">ConnectWise server URL (cloud or on-premise)</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="cw-company-id">Company ID <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" id="cw-company-id"
+                                                                   placeholder="CompanyIdentifier"
+                                                                   value="{{ integrations.connectwise.company_id }}">
+                                                            <small class="form-text text-muted">Your ConnectWise company identifier</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="cw-public-key">Public Key <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" id="cw-public-key"
+                                                                   placeholder="Enter public key"
+                                                                   value="{{ integrations.connectwise.public_key }}">
+                                                            <small class="form-text text-muted">API member public key</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="cw-private-key">Private Key <span class="text-danger">*</span></label>
+                                                            <input type="password" class="form-control" id="cw-private-key"
+                                                                   placeholder="Enter private key"
+                                                                   value="{{ integrations.connectwise.private_key }}">
+                                                            <small class="form-text text-muted">API member private key</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="cw-client-id">Client ID <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" id="cw-client-id"
+                                                                   placeholder="Enter client ID"
+                                                                   value="{{ integrations.connectwise.client_id }}">
+                                                            <small class="form-text text-muted">Unique client identifier for your application</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="cw-default-board">Default Board <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" id="cw-default-board"
+                                                                   placeholder="Service Desk"
+                                                                   value="{{ integrations.connectwise.default_board }}">
+                                                            <small class="form-text text-muted">Default board name for ticket creation</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="cw-verify-ssl"
+                                                                       {% if integrations.connectwise.verify_ssl %}checked{% endif %}>
+                                                                <label class="form-check-label" for="cw-verify-ssl">
+                                                                    Verify SSL certificates
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <div class="form-group">
+                                                            <button type="button" class="btn btn-info btn-sm" onclick="testConnection('connectwise')">
+                                                                <i class="fas fa-plug mr-1"></i>Test Connection
+                                                            </button>
+                                                            <button type="button" class="btn btn-success btn-sm ml-2" onclick="saveConfig('connectwise')">
+                                                                <i class="fas fa-save mr-1"></i>Save Configuration
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="cw-test-result" class="test-result" style="display: none;"></div>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    <!-- CrowdStrike Integration -->
+                                    <div class="integration-card">
+                                        <div class="integration-header">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-shield-virus crowdstrike-icon integration-icon"></i>
+                                                    <div>
+                                                        <h5 class="mb-1">CrowdStrike Falcon</h5>
+                                                        <small class="text-muted">Cloud-native endpoint protection and threat intelligence platform</small>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <span class="status-badge {% if integrations.crowdstrike.enabled %}status-enabled{% else %}status-disabled{% endif %}">
+                                                        {% if integrations.crowdstrike.enabled %}Enabled{% else %}Disabled{% endif %}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="integration-body">
+                                            <form id="crowdstrike-form">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Enable Integration</label>
+                                                            <div class="toggle-container">
+                                                                <div class="custom-control custom-switch">
+                                                                    <input type="checkbox" class="custom-control-input" id="cs-enabled"
+                                                                           {% if integrations.crowdstrike.enabled %}checked{% endif %}>
+                                                                    <label class="custom-control-label" for="cs-enabled">
+                                                                        <span class="switch-text">Enable CrowdStrike integration</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="cs-cloud-region">Cloud Region <span class="text-danger">*</span></label>
+                                                            <select class="form-control" id="cs-cloud-region">
+                                                                <option value="us-1" {% if integrations.crowdstrike.cloud_region == 'us-1' %}selected{% endif %}>US-1 (Commercial)</option>
+                                                                <option value="us-2" {% if integrations.crowdstrike.cloud_region == 'us-2' %}selected{% endif %}>US-2 (Commercial)</option>
+                                                                <option value="eu-1" {% if integrations.crowdstrike.cloud_region == 'eu-1' %}selected{% endif %}>EU-1 (Europe)</option>
+                                                                <option value="us-gov-1" {% if integrations.crowdstrike.cloud_region == 'us-gov-1' %}selected{% endif %}>US-GOV-1 (Government)</option>
+                                                            </select>
+                                                            <small class="form-text text-muted">Select your CrowdStrike cloud region</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="cs-base-url">API Base URL</label>
+                                                            <input type="url" class="form-control" id="cs-base-url"
+                                                                   placeholder="https://api.crowdstrike.com"
+                                                                   value="{{ integrations.crowdstrike.base_url }}">
+                                                            <small class="form-text text-muted">Optional: Override default URL for region</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="cs-client-id">Client ID <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" id="cs-client-id"
+                                                                   placeholder="Enter API client ID"
+                                                                   value="{{ integrations.crowdstrike.client_id }}">
+                                                            <small class="form-text text-muted">OAuth2 client identifier</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="cs-client-secret">Client Secret <span class="text-danger">*</span></label>
+                                                            <input type="password" class="form-control" id="cs-client-secret"
+                                                                   placeholder="Enter API client secret"
+                                                                   value="{{ integrations.crowdstrike.client_secret }}">
+                                                            <small class="form-text text-muted">OAuth2 client secret</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <div class="form-check mt-4">
+                                                                <input class="form-check-input" type="checkbox" id="cs-verify-ssl"
+                                                                       {% if integrations.crowdstrike.verify_ssl %}checked{% endif %}>
+                                                                <label class="form-check-label" for="cs-verify-ssl">
+                                                                    Verify SSL certificates
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <div class="form-group">
+                                                            <button type="button" class="btn btn-info btn-sm" onclick="testConnection('crowdstrike')">
+                                                                <i class="fas fa-plug mr-1"></i>Test Connection
+                                                            </button>
+                                                            <button type="button" class="btn btn-success btn-sm ml-2" onclick="saveConfig('crowdstrike')">
+                                                                <i class="fas fa-save mr-1"></i>Save Configuration
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="cs-test-result" class="test-result" style="display: none;"></div>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    <!-- HaveIBeenPwned Integration -->
+                                    <div class="integration-card">
+                                        <div class="integration-header">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-user-secret haveibeenpwned-icon integration-icon"></i>
+                                                    <div>
+                                                        <h5 class="mb-1">HaveIBeenPwned</h5>
+                                                        <small class="text-muted">Credential exposure intelligence and breach data lookup</small>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <span class="status-badge {% if integrations.haveibeenpwned.enabled %}status-enabled{% else %}status-disabled{% endif %}">
+                                                        {% if integrations.haveibeenpwned.enabled %}Enabled{% else %}Disabled{% endif %}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="integration-body">
+                                            <form id="haveibeenpwned-form">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Enable Integration</label>
+                                                            <div class="toggle-container">
+                                                                <div class="custom-control custom-switch">
+                                                                    <input type="checkbox" class="custom-control-input" id="hibp-enabled"
+                                                                           {% if integrations.haveibeenpwned.enabled %}checked{% endif %}>
+                                                                    <label class="custom-control-label" for="hibp-enabled">
+                                                                        <span class="switch-text">Enable HaveIBeenPwned integration</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="hibp-api-key">API Key <span class="text-danger">*</span></label>
+                                                            <input type="password" class="form-control" id="hibp-api-key"
+                                                                   placeholder="Enter HIBP API key"
+                                                                   value="{{ integrations.haveibeenpwned.api_key }}">
+                                                            <small class="form-text text-muted">Get API key from haveibeenpwned.com</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="hibp-base-url">API Base URL</label>
+                                                            <input type="url" class="form-control" id="hibp-base-url"
+                                                                   placeholder="https://haveibeenpwned.com/api/v3"
+                                                                   value="{{ integrations.haveibeenpwned.base_url }}">
+                                                            <small class="form-text text-muted">Default: https://haveibeenpwned.com/api/v3</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="hibp-rate-limit">Rate Limit Delay (seconds)</label>
+                                                            <input type="number" class="form-control" id="hibp-rate-limit" step="0.1" min="1.5"
+                                                                   placeholder="1.6"
+                                                                   value="{{ integrations.haveibeenpwned.rate_limit_delay }}">
+                                                            <small class="form-text text-muted">Delay between API calls (min 1.5s)</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="hibp-verify-ssl"
+                                                                       {% if integrations.haveibeenpwned.verify_ssl %}checked{% endif %}>
+                                                                <label class="form-check-label" for="hibp-verify-ssl">
+                                                                    Verify SSL certificates
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <button type="button" class="btn btn-info btn-sm" onclick="testConnection('haveibeenpwned')">
+                                                                <i class="fas fa-plug mr-1"></i>Test Connection
+                                                            </button>
+                                                            <button type="button" class="btn btn-success btn-sm ml-2" onclick="saveConfig('haveibeenpwned')">
+                                                                <i class="fas fa-save mr-1"></i>Save Configuration
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="hibp-test-result" class="test-result" style="display: none;"></div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cisco Meraki Integration -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h4 class="card-title">
+                                        <i class="fas fa-network-wired mr-2"></i>Cisco Meraki Dashboard API
+                                    </h4>
+                                </div>
+                                <div class="col-md-6 text-right">
+                                    <div class="form-check form-switch d-inline-block">
+                                        <input class="form-check-input" type="checkbox" id="meraki-enabled" name="meraki-enabled"
+                                               {% if integrations.meraki.enabled %}checked{% endif %}>
+                                        <label class="form-check-label" for="meraki-enabled">
+                                            <span class="switch-label">Enabled</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text text-muted">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Configure Cisco Meraki Dashboard API integration for network control and IP blocking capabilities.
+                                Requires Dashboard API access and Organization ID.
+                            </p>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <form id="meraki-config-form">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="meraki-api-key">API Key <span class="text-danger">*</span></label>
+                                                            <div class="input-group">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                                                </div>
+                                                                <input type="password" class="form-control" id="meraki-api-key" name="api_key"
+                                                                       value="{{ integrations.meraki.api_key if integrations.meraki.api_key else '' }}"
+                                                                       placeholder="Enter your Meraki Dashboard API key">
+                                                                <div class="input-group-append">
+                                                                    <span class="input-group-text" onclick="togglePassword('meraki-api-key')" style="cursor: pointer;">
+                                                                        <i class="fas fa-eye" id="meraki-api-key-eye"></i>
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <small class="form-text text-muted">
+                                                                Generate from Meraki Dashboard → Organization → Settings → Dashboard API access
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="meraki-org-id">Organization ID <span class="text-danger">*</span></label>
+                                                            <div class="input-group">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text"><i class="fas fa-building"></i></span>
+                                                                </div>
+                                                                <input type="text" class="form-control" id="meraki-org-id" name="organization_id"
+                                                                       value="{{ integrations.meraki.organization_id if integrations.meraki.organization_id else '' }}"
+                                                                       placeholder="123456789012345678">
+                                                            </div>
+                                                            <small class="form-text text-muted">
+                                                                Found in Meraki Dashboard URL or API call to /organizations
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <div class="form-check form-switch">
+                                                                <input class="form-check-input" type="checkbox" id="meraki-verify-ssl" name="verify_ssl"
+                                                                       {% if integrations.meraki.verify_ssl %}checked{% endif %}>
+                                                                <label class="form-check-label" for="meraki-verify-ssl">
+                                                                    <i class="fas fa-shield-alt mr-1"></i>Verify SSL certificates
+                                                                </label>
+                                                            </div>
+                                                            <small class="form-text text-muted">
+                                                                Recommended for production environments
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <div class="form-group">
+                                                            <button type="button" class="btn btn-info btn-sm" onclick="testConnection('meraki')">
+                                                                <i class="fas fa-plug mr-1"></i>Test Connection
+                                                            </button>
+                                                            <button type="button" class="btn btn-success btn-sm ml-2" onclick="saveConfig('meraki')">
+                                                                <i class="fas fa-save mr-1"></i>Save Configuration
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="meraki-test-result" class="test-result" style="display: none;"></div>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -329,7 +771,20 @@
 <script>
 function testConnection(integrationType) {
     const config = getConfigFromForm(integrationType);
-    const resultDiv = document.getElementById(`${integrationType === 'velociraptor' ? 'vr' : 's1'}-test-result`);
+    let resultDiv;
+    if (integrationType === 'velociraptor') {
+        resultDiv = document.getElementById('vr-test-result');
+    } else if (integrationType === 'sentinelone') {
+        resultDiv = document.getElementById('s1-test-result');
+    } else if (integrationType === 'connectwise') {
+        resultDiv = document.getElementById('cw-test-result');
+    } else if (integrationType === 'crowdstrike') {
+        resultDiv = document.getElementById('cs-test-result');
+    } else if (integrationType === 'meraki') {
+        resultDiv = document.getElementById('meraki-test-result');
+    } else if (integrationType === 'haveibeenpwned') {
+        resultDiv = document.getElementById('hibp-test-result');
+    }
 
     // Show loading state
     resultDiv.style.display = 'block';
@@ -356,6 +811,30 @@ function testConnection(integrationType) {
             }
             if (data.data.account_name) {
                 resultDiv.innerHTML += `<br><small>Account: ${data.data.account_name}</small>`;
+            }
+            if (data.data.company_name) {
+                resultDiv.innerHTML += `<br><small>Company: ${data.data.company_name}</small>`;
+            }
+            if (data.data.company_identifier) {
+                resultDiv.innerHTML += `<br><small>Company ID: ${data.data.company_identifier}</small>`;
+            }
+            if (data.data.cloud_region) {
+                resultDiv.innerHTML += `<br><small>Cloud Region: ${data.data.cloud_region}</small>`;
+            }
+            if (data.data.token_expires_in) {
+                resultDiv.innerHTML += `<br><small>Token Expires: ${data.data.token_expires_in}s</small>`;
+            }
+            if (data.data.organization_name) {
+                resultDiv.innerHTML += `<br><small>Organization: ${data.data.organization_name}</small>`;
+            }
+            if (data.data.organization_id) {
+                resultDiv.innerHTML += `<br><small>Organization ID: ${data.data.organization_id}</small>`;
+            }
+            if (data.data.total_breaches) {
+                resultDiv.innerHTML += `<br><small>Total Breaches Available: ${data.data.total_breaches}</small>`;
+            }
+            if (data.data.api_version) {
+                resultDiv.innerHTML += `<br><small>API Version: ${data.data.api_version}</small>`;
             }
             if (data.data.response_time) {
                 resultDiv.innerHTML += `<br><small>Response Time: ${data.data.response_time}</small>`;
@@ -416,6 +895,41 @@ function getConfigFromForm(integrationType) {
             api_token: document.getElementById('s1-api-token').value,
             site_id: document.getElementById('s1-site-id').value,
             verify_ssl: document.getElementById('s1-verify-ssl').checked
+        };
+    } else if (integrationType === 'connectwise') {
+        return {
+            enabled: document.getElementById('cw-enabled').checked,
+            base_url: document.getElementById('cw-base-url').value,
+            company_id: document.getElementById('cw-company-id').value,
+            public_key: document.getElementById('cw-public-key').value,
+            private_key: document.getElementById('cw-private-key').value,
+            client_id: document.getElementById('cw-client-id').value,
+            default_board: document.getElementById('cw-default-board').value,
+            verify_ssl: document.getElementById('cw-verify-ssl').checked
+        };
+    } else if (integrationType === 'crowdstrike') {
+        return {
+            enabled: document.getElementById('cs-enabled').checked,
+            base_url: document.getElementById('cs-base-url').value,
+            client_id: document.getElementById('cs-client-id').value,
+            client_secret: document.getElementById('cs-client-secret').value,
+            cloud_region: document.getElementById('cs-cloud-region').value,
+            verify_ssl: document.getElementById('cs-verify-ssl').checked
+        };
+    } else if (integrationType === 'meraki') {
+        return {
+            enabled: document.getElementById('meraki-enabled').checked,
+            api_key: document.getElementById('meraki-api-key').value,
+            organization_id: document.getElementById('meraki-org-id').value,
+            verify_ssl: document.getElementById('meraki-verify-ssl').checked
+        };
+    } else if (integrationType === 'haveibeenpwned') {
+        return {
+            enabled: document.getElementById('hibp-enabled').checked,
+            api_key: document.getElementById('hibp-api-key').value,
+            base_url: document.getElementById('hibp-base-url').value,
+            rate_limit_delay: parseFloat(document.getElementById('hibp-rate-limit').value),
+            verify_ssl: document.getElementById('hibp-verify-ssl').checked
         };
     }
 }
