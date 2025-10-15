@@ -59,3 +59,17 @@ def get_overview_filter():
     overview = get_overview_db(current_user.id, show_full)
 
     return response_success('', data=overview)
+
+
+@overview_blueprint.route('/overview/docs', methods=['GET'])
+@ac_requires()
+def get_overview_docs(caseid, url_redir):
+    """
+    Return the docs page with integration and playbook information
+    """
+    if url_redir:
+        return redirect(url_for('index.index', cid=caseid, redirect=True))
+
+    form = FlaskForm()
+
+    return render_template('overview_docs.html', caseid=caseid, form=form)
