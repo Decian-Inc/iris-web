@@ -15,7 +15,9 @@
       "Bash(docker logs:*)",
       "Bash(winpty docker exec -i iriswebapp_worker find /iriswebapp -name \"*.py\" -exec grep -l \"@celery.task\" {} ;)",
       "Bash(find:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)"
     ],
     "deny": [],
     "ask": []

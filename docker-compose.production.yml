@@ -142,6 +142,12 @@ volumes:
     driver: local
   nginx_logs:
     driver: local
+  iris-downloads:
+    driver: local
+  user_templates:
+    driver: local
+  server_data:
+    driver: local
 
 networks:
   iris_backend:
