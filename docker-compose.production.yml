@@ -1,0 +1,150 @@
+#  Decian Custom IRIS Production Configuration
+#  Production-ready docker-compose configuration for Decian IRIS deployment
+#
+#  This configuration includes all custom Decian features:
+#  - Threat Intelligence integration with MISP
+#  - Enhanced branding (Ironclad)
+#  - SOAR integrations (SentinelOne, Velociraptor)
+#  - Enhanced documentation
+
+services:
+  rabbitmq:
+    extends:
+      file: docker-compose.base.yml
+      service: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-iris}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-iris_password}
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  db:
+    extends:
+      file: docker-compose.base.yml
+      service: db
+    build:
+      context: docker/db
+    image: decian/iris-db:v2.4.22-custom
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-iris_db}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - db_data:/var/lib/postgresql/data:rw
+
+  app:
+    extends:
+      file: docker-compose.base.yml
+      service: app
+    build:
+      context: .
+      dockerfile: docker/webApp/Dockerfile
+    image: decian/iris-app:v2.4.22-custom
+    environment:
+      # Core IRIS Configuration
+      - IRIS_SECRET_KEY=${IRIS_SECRET_KEY}
+      - IRIS_SECURITY_PASSWORD_SALT=${IRIS_SECURITY_PASSWORD_SALT}
+      - DOCKERIZED=1
+      - POSTGRES_DB=${POSTGRES_DB:-iris_db}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=5432
+
+      # Custom Decian Configuration
+      - MISP_URL=${MISP_URL:-https://misp.ironclad.decianx}
+      - MISP_API_KEY=${MISP_API_KEY}
+      - ORGANIZATION_NAME=${ORGANIZATION_NAME:-Decian Security}
+
+      # Production Settings
+      - FLASK_ENV=production
+      - IRIS_ADM_EMAIL=${ADMIN_EMAIL:-admin@decian.com}
+      - IRIS_ADM_USERNAME=${ADMIN_USERNAME:-administrator}
+      - IRIS_ADM_PASSWORD=${ADMIN_PASSWORD}
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - app_data:/home/iris:rw
+
+  worker:
+    extends:
+      file: docker-compose.base.yml
+      service: worker
+    build:
+      context: .
+      dockerfile: docker/webApp/Dockerfile
+    image: decian/iris-app:v2.4.22-custom
+    environment:
+      # Core IRIS Configuration
+      - IRIS_SECRET_KEY=${IRIS_SECRET_KEY}
+      - IRIS_SECURITY_PASSWORD_SALT=${IRIS_SECURITY_PASSWORD_SALT}
+      - DOCKERIZED=1
+      - POSTGRES_DB=${POSTGRES_DB:-iris_db}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=5432
+
+      # Custom Decian Configuration
+      - MISP_URL=${MISP_URL:-https://misp.ironclad.decianx}
+      - MISP_API_KEY=${MISP_API_KEY}
+
+      # Production Settings
+      - FLASK_ENV=production
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - app_data:/home/iris:rw
+
+  nginx:
+    extends:
+      file: docker-compose.base.yml
+      service: nginx
+    build:
+      context: docker/nginx
+    image: decian/iris-nginx:v2.4.22-custom
+    ports:
+      - "${HTTPS_PORT:-443}:443"
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - nginx_certs:/www/certs:rw
+      - nginx_logs:/var/log/nginx:rw
+
+volumes:
+  db_data:
+    driver: local
+  app_data:
+    driver: local
+  nginx_certs:
+    driver: local
+  nginx_logs:
+    driver: local
+
+networks:
+  iris_backend:
+    name: iris_backend
+  iris_frontend:
+    name: iris_frontend
