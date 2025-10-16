@@ -120,7 +120,7 @@ def iris_module_disable_by_id(module_id):
 
 def iris_modules_list():
     data = IrisModule.query.with_entities(
-        IrisModule.id, IrisModule.module_human_name, IrisModule.has_pipeline, IrisModule.module_version,
+        IrisModule.id, IrisModule.module_human_name, IrisModule.module_description, IrisModule.has_pipeline, IrisModule.module_version,
         IrisModule.interface_version, IrisModule.date_added, User.name, IrisModule.is_active, IrisModule.module_config
     ).join(User).all()
 

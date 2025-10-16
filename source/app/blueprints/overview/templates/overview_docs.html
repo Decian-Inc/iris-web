@@ -128,8 +128,12 @@
                             <div class="tab-pane fade show active" id="overview" role="tabpanel">
                                 <div class="row">
                                     <div class="col-md-12">
-                                        <h3><i class="fas fa-info-circle text-primary mr-2"></i>Integration Overview</h3>
-                                        <p class="lead">IRIS integrates with leading security platforms to provide automated response capabilities through SOAR (Security Orchestration, Automation, and Response) playbooks.</p>
+                                        <h3><i class="fas fa-info-circle text-primary mr-2"></i>IRIS Extensions Overview</h3>
+                                        <p class="lead">IRIS extends its capabilities through SOAR integrations and enrichment modules, providing comprehensive incident response and threat intelligence capabilities.</p>
+
+                                        <!-- SOAR Integrations Section -->
+                                        <h4 class="mt-5"><i class="fas fa-robot text-info mr-2"></i>SOAR Integrations</h4>
+                                        <p>Security Orchestration, Automation, and Response integrations that provide automated response capabilities through playbooks.</p>
 
                                         <div class="row mt-4">
                                             <div class="col-md-6">
@@ -263,7 +267,23 @@
 
                                         <div class="section-divider"></div>
 
-                                        <h4><i class="fas fa-robot text-info mr-2"></i>SOAR Playbook Categories</h4>
+                                        <!-- Enrichment Modules Section -->
+                                        <h4><i class="fas fa-puzzle-piece text-success mr-2"></i>Enrichment Modules</h4>
+                                        <p>Dynamic modules that enhance case analysis through automated enrichment, threat intelligence, and data processing.</p>
+
+                                        <div class="row mt-4" id="modules-container">
+                                            <div class="col-md-12 text-center">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="sr-only">Loading modules...</span>
+                                                </div>
+                                                <p class="mt-2">Loading enrichment modules...</p>
+                                            </div>
+                                        </div>
+
+
+                                        <div class="section-divider"></div>
+
+                                        <h4><i class="fas fa-layer-group text-warning mr-2"></i>Integration Categories</h4>
                                         <div class="row mt-3">
                                             <div class="col-md-4">
                                                 <div class="text-center p-3 border rounded">
@@ -275,15 +295,15 @@
                                             <div class="col-md-4">
                                                 <div class="text-center p-3 border rounded">
                                                     <i class="fas fa-search-plus fa-2x text-success mb-2"></i>
-                                                    <h6>Forensics</h6>
-                                                    <small class="text-muted">Collect evidence and analyze incidents</small>
+                                                    <h6>Enrichment</h6>
+                                                    <small class="text-muted">Enhance data with threat intelligence</small>
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="text-center p-3 border rounded">
-                                                    <i class="fas fa-radar-dish fa-2x text-warning mb-2"></i>
-                                                    <h6>Detection</h6>
-                                                    <small class="text-muted">Scan and identify potential threats</small>
+                                                    <i class="fas fa-cogs fa-2x text-info mb-2"></i>
+                                                    <h6>Automation</h6>
+                                                    <small class="text-muted">Automate repetitive analysis tasks</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -1288,7 +1308,7 @@
 
 {% block javascripts %}
     <script>
-        // Initialize tabs
+        // Initialize tabs and load modules
         $(document).ready(function() {
             // Activate tabs
             $('#docsTab a').on('click', function (e) {
@@ -1306,6 +1326,131 @@
                     }, 1000);
                 }
             });
+
+            // Load modules when page loads
+            loadEnrichmentModules();
         });
+
+        // Function to load enrichment modules
+        function loadEnrichmentModules() {
+            $.ajax({
+                url: '/manage/modules/list',
+                method: 'GET',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        renderModuleCards(response.data);
+                    } else {
+                        showModulesError('Failed to load modules: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    showModulesError('Error loading modules: ' + error);
+                }
+            });
+        }
+
+        // Function to render module cards
+        function renderModuleCards(modules) {
+            const container = $('#modules-container');
+            container.empty();
+
+            if (!modules || modules.length === 0) {
+                container.html('<div class="col-md-12 text-center"><p class="text-muted">No modules found.</p></div>');
+                return;
+            }
+
+            modules.forEach(function(module) {
+                const moduleCard = createModuleCard(module);
+                container.append(moduleCard);
+            });
+        }
+
+        // Function to create individual module card
+        function createModuleCard(module) {
+            const isActive = module.is_active;
+            const statusBadge = isActive
+                ? '<span class="badge badge-success">Active</span>'
+                : '<span class="badge badge-secondary">Inactive</span>';
+
+            const borderClass = isActive ? 'border-success' : 'border-secondary';
+            const headerClass = isActive ? 'bg-success' : 'bg-secondary';
+
+            const hasDescription = module.module_description && module.module_description.trim() !== '';
+            const description = hasDescription ? module.module_description : 'No description available';
+
+            // Format the date added
+            const dateAdded = module.date_added ? new Date(module.date_added).toLocaleDateString() : 'Unknown';
+
+            // Get module type information
+            const moduleType = module.has_pipeline ? 'Pipeline Processor' : 'Standard Module';
+
+            return `
+                <div class="col-md-6 mb-4">
+                    <div class="card ${borderClass}">
+                        <div class="card-header ${headerClass} text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-puzzle-piece mr-2"></i>
+                                    ${sanitizeHTML(module.module_human_name || module.module_name)}
+                                </h6>
+                                ${statusBadge}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text mb-3">${sanitizeHTML(description)}</p>
+
+                            <div class="row mb-2">
+                                <div class="col-6">
+                                    <small class="text-muted"><strong>Version:</strong></small><br>
+                                    <small>${sanitizeHTML(module.module_version || 'Unknown')}</small>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted"><strong>Interface:</strong></small><br>
+                                    <small>${sanitizeHTML(module.interface_version || 'Unknown')}</small>
+                                </div>
+                            </div>
+
+                            <div class="row mb-2">
+                                <div class="col-6">
+                                    <small class="text-muted"><strong>Added:</strong></small><br>
+                                    <small>${dateAdded}</small>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted"><strong>Added by:</strong></small><br>
+                                    <small>${sanitizeHTML(module.name || 'System')}</small>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <span class="badge badge-info badge-sm">${moduleType}</span>
+                                ${module.has_pipeline ? '<span class="badge badge-warning badge-sm ml-1">Pipeline Processing</span>' : ''}
+                                ${isActive ? '<span class="badge badge-success badge-sm ml-1">Operational</span>' : '<span class="badge badge-secondary badge-sm ml-1">Disabled</span>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Function to show modules error
+        function showModulesError(message) {
+            $('#modules-container').html(`
+                <div class="col-md-12 text-center">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        ${message}
+                    </div>
+                </div>
+            `);
+        }
+
+
+        // HTML sanitization function
+        function sanitizeHTML(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
     </script>
 {% endblock javascripts %}
