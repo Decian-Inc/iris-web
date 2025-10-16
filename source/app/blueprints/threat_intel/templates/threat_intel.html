@@ -1,0 +1,316 @@
+{% extends "layouts/default.html" %}
+
+{% block title %} Threat Intelligence {% endblock title %}
+
+{% block stylesheets %}
+    <style>
+        .threat-intel-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        .ioc-form-card {
+            border: 1px solid #e3e6f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            background: #fff;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        .ioc-type-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #5a67d8;
+        }
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+        .misp-info {
+            background: #f8f9fc;
+            border-left: 4px solid #5a67d8;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+{{ form.hidden_tag() }}
+
+<div class="page-inner">
+
+    <!-- Header Section -->
+    <div class="threat-intel-header text-center">
+        <h2><i class="fas fa-shield-alt mr-3"></i>Threat Intelligence Sharing</h2>
+        <p class="mb-0">Contribute to the Decian Community MISP Feed by sharing malicious indicators</p>
+    </div>
+
+    <!-- MISP Information Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="misp-info">
+                <h5><i class="fas fa-info-circle mr-2"></i>About MISP</h5>
+                <p class="mb-2">
+                    <strong>MISP (Malware Information Sharing Platform)</strong> is an open-source threat intelligence platform
+                    designed to improve the sharing of structured threat information among security professionals.
+                </p>
+                <p class="mb-0">
+                    By submitting indicators of compromise (IOCs) here, you're helping build a community-driven threat intelligence
+                    database that benefits all Decian users. Your contributions help others identify and defend against similar threats.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- IOC Submission Forms -->
+    <div class="row">
+
+        <!-- IP Address Form -->
+        <div class="col-md-6 col-lg-4">
+            <div class="ioc-form-card">
+                <div class="text-center">
+                    <i class="fas fa-network-wired ioc-type-icon"></i>
+                    <h5>IP Address</h5>
+                    <p class="text-muted">Submit malicious IP addresses</p>
+                </div>
+                <form method="POST" action="/threat-intel/submit">
+                    {{ form.hidden_tag() }}
+                    <input type="hidden" name="ioc_type" value="ip-dst">
+                    <div class="form-group">
+                        <label for="ip_value">IP Address <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="ioc_value" placeholder="192.168.1.100" required
+                               pattern="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$">
+                        <small class="form-text text-muted">Enter a valid IPv4 address</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="ip_comment">Comment</label>
+                        <textarea class="form-control" name="comment" rows="3" placeholder="Description of malicious activity..."></textarea>
+                    </div>
+                    <button type="submit" class="btn submit-btn btn-block">
+                        <i class="fas fa-upload mr-2"></i>Submit IP
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Domain Form -->
+        <div class="col-md-6 col-lg-4">
+            <div class="ioc-form-card">
+                <div class="text-center">
+                    <i class="fas fa-globe ioc-type-icon"></i>
+                    <h5>Domain Name</h5>
+                    <p class="text-muted">Submit malicious domains</p>
+                </div>
+                <form method="POST" action="/threat-intel/submit">
+                    {{ form.hidden_tag() }}
+                    <input type="hidden" name="ioc_type" value="domain">
+                    <div class="form-group">
+                        <label for="domain_value">Domain Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="ioc_value" placeholder="evil-domain.com" required>
+                        <small class="form-text text-muted">Enter a domain name without protocol</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="domain_comment">Comment</label>
+                        <textarea class="form-control" name="comment" rows="3" placeholder="Description of malicious activity..."></textarea>
+                    </div>
+                    <button type="submit" class="btn submit-btn btn-block">
+                        <i class="fas fa-upload mr-2"></i>Submit Domain
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- MD5 Hash Form -->
+        <div class="col-md-6 col-lg-4">
+            <div class="ioc-form-card">
+                <div class="text-center">
+                    <i class="fas fa-fingerprint ioc-type-icon"></i>
+                    <h5>MD5 Hash</h5>
+                    <p class="text-muted">Submit malicious file MD5 hashes</p>
+                </div>
+                <form method="POST" action="/threat-intel/submit">
+                    {{ form.hidden_tag() }}
+                    <input type="hidden" name="ioc_type" value="md5">
+                    <div class="form-group">
+                        <label for="md5_value">MD5 Hash <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="ioc_value" placeholder="d41d8cd98f00b204e9800998ecf8427e" required
+                               pattern="^[a-fA-F0-9]{32}$" style="font-family: monospace;">
+                        <small class="form-text text-muted">32-character hexadecimal string</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="md5_comment">Comment</label>
+                        <textarea class="form-control" name="comment" rows="3" placeholder="Description of malicious file..."></textarea>
+                    </div>
+                    <button type="submit" class="btn submit-btn btn-block">
+                        <i class="fas fa-upload mr-2"></i>Submit MD5
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- SHA256 Hash Form -->
+        <div class="col-md-6 col-lg-4">
+            <div class="ioc-form-card">
+                <div class="text-center">
+                    <i class="fas fa-key ioc-type-icon"></i>
+                    <h5>SHA256 Hash</h5>
+                    <p class="text-muted">Submit malicious file SHA256 hashes</p>
+                </div>
+                <form method="POST" action="/threat-intel/submit">
+                    {{ form.hidden_tag() }}
+                    <input type="hidden" name="ioc_type" value="sha256">
+                    <div class="form-group">
+                        <label for="sha256_value">SHA256 Hash <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="ioc_value"
+                               placeholder="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" required
+                               pattern="^[a-fA-F0-9]{64}$" style="font-family: monospace;">
+                        <small class="form-text text-muted">64-character hexadecimal string</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="sha256_comment">Comment</label>
+                        <textarea class="form-control" name="comment" rows="3" placeholder="Description of malicious file..."></textarea>
+                    </div>
+                    <button type="submit" class="btn submit-btn btn-block">
+                        <i class="fas fa-upload mr-2"></i>Submit SHA256
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- URL Form -->
+        <div class="col-md-6 col-lg-4">
+            <div class="ioc-form-card">
+                <div class="text-center">
+                    <i class="fas fa-link ioc-type-icon"></i>
+                    <h5>URL</h5>
+                    <p class="text-muted">Submit malicious URLs</p>
+                </div>
+                <form method="POST" action="/threat-intel/submit">
+                    {{ form.hidden_tag() }}
+                    <input type="hidden" name="ioc_type" value="url">
+                    <div class="form-group">
+                        <label for="url_value">URL <span class="text-danger">*</span></label>
+                        <input type="url" class="form-control" name="ioc_value" placeholder="https://evil-site.com/malware.exe" required>
+                        <small class="form-text text-muted">Enter a complete URL with protocol</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="url_comment">Comment</label>
+                        <textarea class="form-control" name="comment" rows="3" placeholder="Description of malicious content..."></textarea>
+                    </div>
+                    <button type="submit" class="btn submit-btn btn-block">
+                        <i class="fas fa-upload mr-2"></i>Submit URL
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Email Form -->
+        <div class="col-md-6 col-lg-4">
+            <div class="ioc-form-card">
+                <div class="text-center">
+                    <i class="fas fa-envelope ioc-type-icon"></i>
+                    <h5>Email Address</h5>
+                    <p class="text-muted">Submit malicious email addresses</p>
+                </div>
+                <form method="POST" action="/threat-intel/submit">
+                    {{ form.hidden_tag() }}
+                    <input type="hidden" name="ioc_type" value="email">
+                    <div class="form-group">
+                        <label for="email_value">Email Address <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" name="ioc_value" placeholder="attacker@evil-domain.com" required>
+                        <small class="form-text text-muted">Enter a valid email address format</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="email_comment">Comment</label>
+                        <textarea class="form-control" name="comment" rows="3" placeholder="Description of malicious activity..."></textarea>
+                    </div>
+                    <button type="submit" class="btn submit-btn btn-block">
+                        <i class="fas fa-upload mr-2"></i>Submit Email
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Information Footer -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h6><i class="fas fa-exclamation-triangle mr-2 text-warning"></i>Important Guidelines</h6>
+                    <ul class="mb-0">
+                        <li>Only submit indicators that you have confirmed as malicious</li>
+                        <li>Provide clear and accurate descriptions in the comment field</li>
+                        <li>Do not submit false positives or legitimate infrastructure</li>
+                        <li>All submissions are shared with the Decian community</li>
+                        <li>Submissions are automatically processed and may take time to appear in feeds</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+    // Form validation and user experience enhancements
+    $(document).ready(function() {
+        // Auto-dismiss success alerts after 5 seconds
+        setTimeout(function() {
+            $('.alert-success').fadeOut('slow');
+        }, 5000);
+
+        // Add loading state to submit buttons
+        $('form').submit(function() {
+            var $btn = $(this).find('button[type="submit"]');
+            var originalText = $btn.html();
+            $btn.html('<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...').prop('disabled', true);
+
+            // Re-enable after 10 seconds as fallback
+            setTimeout(function() {
+                $btn.html(originalText).prop('disabled', false);
+            }, 10000);
+        });
+
+        // Convert hash inputs to lowercase
+        $('input[name="ioc_value"]').on('input', function() {
+            var type = $(this).closest('form').find('input[name="ioc_type"]').val();
+            if (type === 'md5' || type === 'sha256') {
+                $(this).val($(this).val().toLowerCase());
+            }
+        });
+    });
+</script>
+{% endblock javascripts %}

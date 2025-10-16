@@ -64,6 +64,7 @@ from app.blueprints.manage.manage_case_templates_routes import manage_case_templ
 from app.blueprints.manage.manage_users import manage_users_blueprint
 from app.blueprints.manage.manage_integrations.manage_integrations_routes import manage_integrations_blueprint
 from app.blueprints.overview.overview_routes import overview_blueprint
+from app.blueprints.threat_intel.threat_intel_routes import threat_intel_blueprint
 from app.blueprints.profile.profile_routes import profile_blueprint
 from app.blueprints.reports.reports_route import reports_blueprint
 from app.blueprints.search.search_routes import search_blueprint
@@ -74,6 +75,7 @@ from app.post_init import run_post_init
 app.register_blueprint(graphql_blueprint)
 app.register_blueprint(dashboard_blueprint)
 app.register_blueprint(overview_blueprint)
+app.register_blueprint(threat_intel_blueprint)
 app.register_blueprint(login_blueprint)
 app.register_blueprint(profile_blueprint)
 app.register_blueprint(search_blueprint)
