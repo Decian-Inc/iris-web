@@ -256,6 +256,39 @@ def soar_templates_list():
                 "allowed_target_types": ["password_hash"],
                 "created_by": "system",
                 "created_at": "2025-10-15T00:00:00Z"
+            },
+            {
+                "id": "fortigate-block-ip",
+                "name": "FortiGate Block IP Address",
+                "description": "Instantly block an IP address across FortiGate firewall policies",
+                "vendor": "FortiGate",
+                "tags": ["containment", "blocking"],
+                "requires_approval": True,
+                "allowed_target_types": ["ip_address"],
+                "created_by": "system",
+                "created_at": "2025-10-15T00:00:00Z"
+            },
+            {
+                "id": "fortigate-block-domain",
+                "name": "FortiGate Block Domain/URL",
+                "description": "Dynamically block a malicious domain via FortiGate's web filter",
+                "vendor": "FortiGate",
+                "tags": ["containment", "blocking"],
+                "requires_approval": True,
+                "allowed_target_types": ["domain", "url"],
+                "created_by": "system",
+                "created_at": "2025-10-15T00:00:00Z"
+            },
+            {
+                "id": "fortigate-quarantine-host",
+                "name": "FortiGate Quarantine Host",
+                "description": "Immediately isolate an internal host showing compromise indicators",
+                "vendor": "FortiGate",
+                "tags": ["containment", "quarantine"],
+                "requires_approval": True,
+                "allowed_target_types": ["ip_address", "hostname"],
+                "created_by": "system",
+                "created_at": "2025-10-15T00:00:00Z"
             }
         ]
 
@@ -434,6 +467,9 @@ def execute_soar_job(job_id, template_id, target, case_id, integrations_config):
         elif template_id.startswith('hibp'):
             integration_type = 'haveibeenpwned'
             config = integrations_config.get('haveibeenpwned', {})
+        elif template_id.startswith('fortigate'):
+            integration_type = 'fortigate'
+            config = integrations_config.get('fortigate', {})
         else:
             return {
                 "job_id": job_id,
@@ -537,6 +573,12 @@ def execute_soar_job(job_id, template_id, target, case_id, integrations_config):
             result = execute_hibp_domain_check(job_id, target, config, case_id)
         elif template_id == 'hibp-password-check':
             result = execute_hibp_password_check(job_id, target, config, case_id)
+        elif template_id == 'fortigate-block-ip':
+            result = execute_fortigate_block_ip(job_id, target, config, case_id)
+        elif template_id == 'fortigate-block-domain':
+            result = execute_fortigate_block_domain(job_id, target, config, case_id)
+        elif template_id == 'fortigate-quarantine-host':
+            result = execute_fortigate_quarantine_host(job_id, target, config, case_id)
         else:
             result = {
                 "job_id": job_id,
@@ -576,7 +618,10 @@ def get_template_name(template_id):
         'meraki-verify-network-event': 'Cisco Meraki Verify Network Event',
         'hibp-email-check': 'HaveIBeenPwned Email Exposure Check',
         'hibp-domain-check': 'HaveIBeenPwned Domain Exposure Check',
-        'hibp-password-check': 'HaveIBeenPwned Password Reuse Check'
+        'hibp-password-check': 'HaveIBeenPwned Password Reuse Check',
+        'fortigate-block-ip': 'FortiGate Block IP Address',
+        'fortigate-block-domain': 'FortiGate Block Domain/URL',
+        'fortigate-quarantine-host': 'FortiGate Quarantine Host'
     }
     return template_names.get(template_id, template_id)
 
@@ -3056,6 +3101,442 @@ _This password does not appear in the compromised password database._"""
     except Exception as e:
         error_msg = f"Unexpected error: {str(e)}"
         add_case_note(case_id, f"**HIBP Password Check Failed**\n\nError: {error_msg}")
+
+        return {
+            "job_id": job_id,
+            "status": "Failed",
+            "message": error_msg,
+            "error": str(e)
+        }
+
+
+def execute_fortigate_block_ip(job_id, target, config, case_id):
+    """
+    Execute FortiGate IP blocking via firewall address and policy creation
+    """
+    try:
+        import requests
+
+        # Extract configuration
+        base_url = config.get('base_url', '').strip().rstrip('/')
+        api_key = config.get('api_key')
+        verify_ssl = config.get('verify_ssl', True)
+        api_version = config.get('api_version', 'v2')
+        vdom = config.get('vdom', 'root')
+
+        if not api_key or not base_url:
+            return {
+                "job_id": job_id,
+                "status": "Failed",
+                "message": "FortiGate API credentials not configured",
+                "error": "Missing API key or base URL in integration configuration"
+            }
+
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+
+        start_time = datetime.now()
+        address_name = f"IRIS_Block_{target.replace('.', '_')}"
+        policy_name = f"IRIS_BLOCK_{target.replace('.', '_')}"
+
+        # Step 1: Create firewall address object
+        address_url = f"{base_url}/api/{api_version}/cmdb/firewall/address"
+        address_params = {'vdom': vdom} if vdom != 'root' else {}
+
+        address_data = {
+            "name": address_name,
+            "subnet": f"{target}/32",
+            "comment": f"IRIS SOAR auto-block for case {case_id}"
+        }
+
+        address_response = requests.post(
+            address_url,
+            headers=headers,
+            params=address_params,
+            json=address_data,
+            verify=verify_ssl,
+            timeout=30
+        )
+
+        if address_response.status_code not in [200, 201]:
+            return {
+                "job_id": job_id,
+                "status": "Failed",
+                "message": f"Failed to create address object: {address_response.status_code}",
+                "error": address_response.text
+            }
+
+        # Step 2: Create firewall policy to block the IP
+        policy_url = f"{base_url}/api/{api_version}/cmdb/firewall/policy"
+        policy_params = {'vdom': vdom} if vdom != 'root' else {}
+
+        policy_data = {
+            "name": policy_name,
+            "srcintf": [{"name": "any"}],
+            "dstintf": [{"name": "any"}],
+            "srcaddr": [{"name": "all"}],
+            "dstaddr": [{"name": address_name}],
+            "action": "deny",
+            "status": "enable",
+            "comments": f"IRIS SOAR auto-block policy for case {case_id}"
+        }
+
+        policy_response = requests.post(
+            policy_url,
+            headers=headers,
+            params=policy_params,
+            json=policy_data,
+            verify=verify_ssl,
+            timeout=30
+        )
+
+        if policy_response.status_code not in [200, 201]:
+            return {
+                "job_id": job_id,
+                "status": "Failed",
+                "message": f"Failed to create blocking policy: {policy_response.status_code}",
+                "error": policy_response.text
+            }
+
+        end_time = datetime.now()
+
+        # Save artifacts
+        artifact_path = create_case_artifact_folder(case_id, 'fortigate')
+        artifact_filename = f"block_{target.replace('.', '_')}_{job_id}.json"
+
+        artifact_data = {
+            'ip_address': target,
+            'timestamp': start_time.isoformat(),
+            'job_id': job_id,
+            'address_object': {
+                'name': address_name,
+                'response': address_response.json() if address_response.status_code in [200, 201] else None
+            },
+            'policy_object': {
+                'name': policy_name,
+                'response': policy_response.json() if policy_response.status_code in [200, 201] else None
+            },
+            'execution_time': (end_time - start_time).total_seconds()
+        }
+
+        if artifact_path:
+            save_case_artifact(case_id, artifact_filename, artifact_data, 'fortigate')
+
+        # Add case note
+        note_content = f"""**SOAR Action:** Block IP on FortiGate
+**IP:** {target}
+**Timestamp:** {start_time.strftime('%Y-%m-%d %H:%M:%S UTC')}
+✅ IP added to deny policy on FortiGate.
+
+**Created Objects:**
+- Address Object: `{address_name}`
+- Policy: `{policy_name}`
+
+_Full details stored in `/cases/{case_id}/artifacts/fortigate/{artifact_filename}`_"""
+
+        add_case_note(case_id, note_content)
+
+        return {
+            "job_id": job_id,
+            "status": "Completed",
+            "message": f"IP {target} successfully blocked on FortiGate",
+            "artifacts": [artifact_filename] if artifact_path else [],
+            "details": {
+                "ip_address": target,
+                "address_object": address_name,
+                "policy_name": policy_name,
+                "execution_time": (end_time - start_time).total_seconds()
+            }
+        }
+
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Network error during FortiGate IP block: {str(e)}"
+        add_case_note(case_id, f"**FortiGate IP Block Failed**\n\nError: {error_msg}")
+
+        return {
+            "job_id": job_id,
+            "status": "Failed",
+            "message": error_msg,
+            "error": str(e)
+        }
+    except Exception as e:
+        error_msg = f"Unexpected error: {str(e)}"
+        add_case_note(case_id, f"**FortiGate IP Block Failed**\n\nError: {error_msg}")
+
+        return {
+            "job_id": job_id,
+            "status": "Failed",
+            "message": error_msg,
+            "error": str(e)
+        }
+
+
+def execute_fortigate_block_domain(job_id, target, config, case_id):
+    """
+    Execute FortiGate domain blocking via web filter
+    """
+    try:
+        import requests
+
+        # Extract configuration
+        base_url = config.get('base_url', '').strip().rstrip('/')
+        api_key = config.get('api_key')
+        verify_ssl = config.get('verify_ssl', True)
+        api_version = config.get('api_version', 'v2')
+        vdom = config.get('vdom', 'root')
+
+        if not api_key or not base_url:
+            return {
+                "job_id": job_id,
+                "status": "Failed",
+                "message": "FortiGate API credentials not configured",
+                "error": "Missing API key or base URL in integration configuration"
+            }
+
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+
+        start_time = datetime.now()
+        filter_name = f"IRIS_BLOCK_{target.replace('.', '_').replace('/', '_')}"
+
+        # Create web filter URL filter
+        url_filter_url = f"{base_url}/api/{api_version}/cmdb/webfilter/urlfilter"
+        params = {'vdom': vdom} if vdom != 'root' else {}
+
+        filter_data = {
+            "name": filter_name,
+            "entries": [
+                {
+                    "url": target,
+                    "type": "simple",
+                    "action": "block"
+                }
+            ],
+            "comment": f"IRIS SOAR auto-block for case {case_id}"
+        }
+
+        response = requests.post(
+            url_filter_url,
+            headers=headers,
+            params=params,
+            json=filter_data,
+            verify=verify_ssl,
+            timeout=30
+        )
+
+        end_time = datetime.now()
+
+        if response.status_code in [200, 201]:
+            # Save artifacts
+            artifact_path = create_case_artifact_folder(case_id, 'fortigate')
+            artifact_filename = f"block_{target.replace('.', '_').replace('/', '_')}_{job_id}.json"
+
+            artifact_data = {
+                'domain': target,
+                'timestamp': start_time.isoformat(),
+                'job_id': job_id,
+                'filter_object': {
+                    'name': filter_name,
+                    'response': response.json()
+                },
+                'execution_time': (end_time - start_time).total_seconds()
+            }
+
+            if artifact_path:
+                save_case_artifact(case_id, artifact_filename, artifact_data, 'fortigate')
+
+            # Add case note
+            note_content = f"""**SOAR Action:** Block Domain
+**Domain:** {target}
+**Timestamp:** {start_time.strftime('%Y-%m-%d %H:%M:%S UTC')}
+✅ Successfully blocked in FortiGate web filter policy.
+
+**Created Filter:** `{filter_name}`
+
+_Full details stored in `/cases/{case_id}/artifacts/fortigate/{artifact_filename}`_"""
+
+            add_case_note(case_id, note_content)
+
+            return {
+                "job_id": job_id,
+                "status": "Completed",
+                "message": f"Domain {target} successfully blocked on FortiGate",
+                "artifacts": [artifact_filename] if artifact_path else [],
+                "details": {
+                    "domain": target,
+                    "filter_name": filter_name,
+                    "execution_time": (end_time - start_time).total_seconds()
+                }
+            }
+        else:
+            return {
+                "job_id": job_id,
+                "status": "Failed",
+                "message": f"Failed to create domain filter: {response.status_code}",
+                "error": response.text
+            }
+
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Network error during FortiGate domain block: {str(e)}"
+        add_case_note(case_id, f"**FortiGate Domain Block Failed**\n\nError: {error_msg}")
+
+        return {
+            "job_id": job_id,
+            "status": "Failed",
+            "message": error_msg,
+            "error": str(e)
+        }
+    except Exception as e:
+        error_msg = f"Unexpected error: {str(e)}"
+        add_case_note(case_id, f"**FortiGate Domain Block Failed**\n\nError: {error_msg}")
+
+        return {
+            "job_id": job_id,
+            "status": "Failed",
+            "message": error_msg,
+            "error": str(e)
+        }
+
+
+def execute_fortigate_quarantine_host(job_id, target, config, case_id):
+    """
+    Execute FortiGate host quarantine via banned user API
+    """
+    try:
+        import requests
+
+        # Extract configuration
+        base_url = config.get('base_url', '').strip().rstrip('/')
+        api_key = config.get('api_key')
+        verify_ssl = config.get('verify_ssl', True)
+        api_version = config.get('api_version', 'v2')
+        vdom = config.get('vdom', 'root')
+        quarantine_duration = config.get('quarantine_duration', 3600)
+
+        if not api_key or not base_url:
+            return {
+                "job_id": job_id,
+                "status": "Failed",
+                "message": "FortiGate API credentials not configured",
+                "error": "Missing API key or base URL in integration configuration"
+            }
+
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+
+        start_time = datetime.now()
+
+        # Add user to banned list
+        ban_url = f"{base_url}/api/{api_version}/monitor/user/banned/add"
+        params = {'vdom': vdom} if vdom != 'root' else {}
+
+        ban_data = {
+            "ip": target,
+            "expiry": quarantine_duration
+        }
+
+        ban_response = requests.post(
+            ban_url,
+            headers=headers,
+            params=params,
+            json=ban_data,
+            verify=verify_ssl,
+            timeout=30
+        )
+
+        if ban_response.status_code in [200, 201]:
+            # Poll to confirm ban was applied
+            list_url = f"{base_url}/api/{api_version}/monitor/user/banned/list"
+
+            time.sleep(2)  # Brief wait before verification
+            list_response = requests.get(
+                list_url,
+                headers=headers,
+                params=params,
+                verify=verify_ssl,
+                timeout=30
+            )
+
+            end_time = datetime.now()
+            banned_users = list_response.json() if list_response.status_code == 200 else []
+
+            # Check if our IP is in the banned list
+            is_banned = any(user.get('ip') == target for user in banned_users.get('results', []))
+
+            # Save artifacts
+            artifact_path = create_case_artifact_folder(case_id, 'fortigate')
+            artifact_filename = f"quarantine_{target.replace('.', '_')}_{job_id}.json"
+
+            artifact_data = {
+                'host_ip': target,
+                'timestamp': start_time.isoformat(),
+                'job_id': job_id,
+                'quarantine_duration': quarantine_duration,
+                'ban_response': ban_response.json() if ban_response.status_code in [200, 201] else None,
+                'verification_response': banned_users,
+                'is_confirmed_banned': is_banned,
+                'execution_time': (end_time - start_time).total_seconds()
+            }
+
+            if artifact_path:
+                save_case_artifact(case_id, artifact_filename, artifact_data, 'fortigate')
+
+            # Add case note
+            status_emoji = "✅" if is_banned else "⚠️"
+            note_content = f"""**SOAR Action:** Quarantine Host
+**Endpoint:** {target}
+**Timestamp:** {start_time.strftime('%Y-%m-%d %H:%M:%S UTC')}
+**Result:** {status_emoji} User banned for {quarantine_duration // 3600} hour(s).
+
+**Duration:** {quarantine_duration} seconds
+**Verification:** {'Confirmed in banned list' if is_banned else 'Could not verify ban status'}
+
+_Full details stored in `/cases/{case_id}/artifacts/fortigate/{artifact_filename}`_"""
+
+            add_case_note(case_id, note_content)
+
+            return {
+                "job_id": job_id,
+                "status": "Completed",
+                "message": f"Host {target} quarantined for {quarantine_duration} seconds",
+                "artifacts": [artifact_filename] if artifact_path else [],
+                "details": {
+                    "host_ip": target,
+                    "quarantine_duration": quarantine_duration,
+                    "is_confirmed_banned": is_banned,
+                    "execution_time": (end_time - start_time).total_seconds()
+                }
+            }
+        else:
+            return {
+                "job_id": job_id,
+                "status": "Failed",
+                "message": f"Failed to quarantine host: {ban_response.status_code}",
+                "error": ban_response.text
+            }
+
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Network error during FortiGate host quarantine: {str(e)}"
+        add_case_note(case_id, f"**FortiGate Host Quarantine Failed**\n\nError: {error_msg}")
+
+        return {
+            "job_id": job_id,
+            "status": "Failed",
+            "message": error_msg,
+            "error": str(e)
+        }
+    except Exception as e:
+        error_msg = f"Unexpected error: {str(e)}"
+        add_case_note(case_id, f"**FortiGate Host Quarantine Failed**\n\nError: {error_msg}")
 
         return {
             "job_id": job_id,

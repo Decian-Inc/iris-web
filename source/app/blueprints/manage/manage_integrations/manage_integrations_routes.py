@@ -123,6 +123,8 @@ def test_integration_connection():
             result = test_meraki_connection(config)
         elif integration_type == 'haveibeenpwned':
             result = test_haveibeenpwned_connection(config)
+        elif integration_type == 'fortigate':
+            result = test_fortigate_connection(config)
         else:
             return response_error("Unsupported integration type")
 
@@ -200,6 +202,15 @@ def get_integrations_config():
                 'base_url': 'https://haveibeenpwned.com/api/v3',
                 'verify_ssl': True,
                 'rate_limit_delay': 1.6
+            },
+            'fortigate': {
+                'enabled': False,
+                'base_url': '',
+                'api_key': '',
+                'verify_ssl': True,
+                'api_version': 'v2',
+                'vdom': 'root',
+                'quarantine_duration': 3600
             }
         }
 
@@ -673,5 +684,96 @@ def test_haveibeenpwned_connection(config):
         return {'success': False, 'message': 'Connection timeout - check network connectivity'}
     except requests.exceptions.ConnectionError:
         return {'success': False, 'message': 'Connection failed - check network connectivity'}
+    except Exception as e:
+        return {'success': False, 'message': f'Connection test failed: {str(e)}'}
+
+
+def test_fortigate_connection(config):
+    """
+    Test FortiGate API connection
+    """
+    try:
+        import requests
+
+        base_url = config.get('base_url', '').strip().rstrip('/')
+        api_key = config.get('api_key', '').strip()
+        verify_ssl = config.get('verify_ssl', True)
+        api_version = config.get('api_version', 'v2')
+        vdom = config.get('vdom', 'root')
+
+        # Validate required fields
+        if not base_url:
+            return {
+                'success': False,
+                'message': 'Missing required base URL'
+            }
+
+        if not api_key:
+            return {
+                'success': False,
+                'message': 'Missing required API key'
+            }
+
+        # Test endpoint - get system status
+        test_url = f"{base_url}/api/{api_version}/monitor/system/status"
+
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+
+        params = {'vdom': vdom} if vdom != 'root' else {}
+
+        # Test connection with timeout
+        response = requests.get(
+            test_url,
+            headers=headers,
+            params=params,
+            verify=verify_ssl,
+            timeout=10
+        )
+
+        if response.status_code == 200:
+            system_data = response.json()
+            version = system_data.get('version', 'Unknown')
+            serial = system_data.get('serial', 'Unknown')
+            hostname = system_data.get('hostname', 'Unknown')
+
+            return {
+                'success': True,
+                'message': 'Connection test successful',
+                'fortigate_version': version,
+                'serial_number': serial,
+                'hostname': hostname,
+                'vdom': vdom,
+                'api_version': api_version,
+                'response_time': f'{response.elapsed.total_seconds()*1000:.0f}ms'
+            }
+        elif response.status_code == 401:
+            return {
+                'success': False,
+                'message': 'Invalid API key - check your FortiGate API key'
+            }
+        elif response.status_code == 403:
+            return {
+                'success': False,
+                'message': 'Access forbidden - check API key permissions and VDOM access'
+            }
+        elif response.status_code == 404:
+            return {
+                'success': False,
+                'message': 'API endpoint not found - check FortiGate version and API version'
+            }
+        else:
+            return {
+                'success': False,
+                'message': f'API test failed with status {response.status_code}: {response.text}'
+            }
+
+    except requests.exceptions.Timeout:
+        return {'success': False, 'message': 'Connection timeout - check network connectivity'}
+    except requests.exceptions.ConnectionError:
+        return {'success': False, 'message': 'Connection failed - check network connectivity and FortiGate IP'}
     except Exception as e:
         return {'success': False, 'message': f'Connection test failed: {str(e)}'}

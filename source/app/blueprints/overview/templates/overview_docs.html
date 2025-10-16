@@ -25,6 +25,9 @@
         .integration-header.haveibeenpwned {
             background: linear-gradient(135deg, #6f42c1 0%, #5a2d91 100%);
         }
+        .integration-header.fortigate {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        }
         .playbook-item {
             border-left: 4px solid #007bff;
             padding: 1rem;
@@ -109,6 +112,11 @@
                             <li class="nav-item" role="presentation">
                                 <a class="nav-link" id="hibp-tab" data-toggle="pill" href="#hibp" role="tab">
                                     <i class="fas fa-user-secret mr-1"></i>HaveIBeenPwned
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" id="fortigate-tab" data-toggle="pill" href="#fortigate" role="tab">
+                                    <i class="fas fa-shield-alt mr-1"></i>FortiGate
                                 </a>
                             </li>
                         </ul>
@@ -228,6 +236,26 @@
                                                             <li><i class="fas fa-check text-success mr-2"></i>k-anonymity password security</li>
                                                         </ul>
                                                         <span class="badge badge-secondary">3 Playbooks Available</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row mt-4">
+                                            <div class="col-md-6 mx-auto">
+                                                <div class="card border-primary">
+                                                    <div class="card-header bg-primary text-white">
+                                                        <h5 class="mb-0"><i class="fas fa-shield-alt mr-2"></i>FortiGate Integration</h5>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <p>Enterprise firewall and network security platform integration.</p>
+                                                        <ul class="list-unstyled">
+                                                            <li><i class="fas fa-check text-success mr-2"></i>IP address blocking via firewall</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Domain/URL filtering and blocking</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Host quarantine and user banning</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Multi-VDOM environment support</li>
+                                                        </ul>
+                                                        <span class="badge badge-primary">3 Playbooks Available</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1093,6 +1121,158 @@
                                                 <li><code>/cases/{case_id}/artifacts/hibp/hibp_email_{email}_{job_id}.json</code></li>
                                                 <li><code>/cases/{case_id}/artifacts/hibp/hibp_domain_{domain}_{job_id}.json</code></li>
                                                 <li><code>/cases/{case_id}/artifacts/hibp/hibp_password_check_{job_id}.json</code></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FortiGate Tab -->
+                            <div class="tab-pane fade" id="fortigate" role="tabpanel">
+                                <div class="integration-card">
+                                    <div class="integration-header fortigate">
+                                        <h3><i class="fas fa-shield-alt mr-2"></i>FortiGate Firewall Integration</h3>
+                                        <p class="mb-0">Enterprise firewall and network security platform for automated threat containment</p>
+                                    </div>
+                                    <div class="card-body">
+                                        <h5><i class="fas fa-info-circle text-primary mr-2"></i>About FortiGate</h5>
+                                        <p>FortiGate is Fortinet's flagship enterprise firewall platform that provides comprehensive network security, including advanced threat protection, VPN capabilities, and network segmentation. The IRIS integration enables automated blocking of malicious IPs, domains, and quarantine actions through the FortiGate REST API.</p>
+
+                                        <h5 class="mt-4"><i class="fas fa-cog text-secondary mr-2"></i>Configuration Requirements</h5>
+                                        <ul>
+                                            <li><strong>API Key:</strong> Valid FortiGate API key with appropriate permissions</li>
+                                            <li><strong>Base URL:</strong> Your FortiGate management interface URL (e.g., https://fortigate.company.com)</li>
+                                            <li><strong>API Version:</strong> Supported versions v1 or v2 (recommended: v2)</li>
+                                            <li><strong>VDOM:</strong> Virtual Domain name (use 'root' for single VDOM setups)</li>
+                                            <li><strong>Quarantine Duration:</strong> Default duration in hours for user/IP banning (default: 24)</li>
+                                            <li><strong>Required Permissions:</strong> Firewall policy management, address object creation, web filter management</li>
+                                        </ul>
+
+                                        <div class="alert alert-info mt-3">
+                                            <h6><i class="fas fa-info-circle mr-2"></i>API Key Setup</h6>
+                                            <p class="mb-2">Create an API key in FortiGate with appropriate permissions:</p>
+                                            <ol class="mb-2">
+                                                <li>Log into FortiGate → System → Administrators → Create New → REST API Admin</li>
+                                                <li>Set Administrator Profile with required permissions (Super Admin or custom profile)</li>
+                                                <li>Configure trusted hosts if needed for additional security</li>
+                                                <li>Generate and save the API key securely - it's shown only once!</li>
+                                            </ol>
+                                        </div>
+
+                                        <h5 class="mt-4"><i class="fas fa-play-circle text-success mr-2"></i>Available SOAR Playbooks</h5>
+
+                                        <!-- Block IP Playbook -->
+                                        <div class="playbook-item containment">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h6><i class="fas fa-ban mr-2"></i>Block Malicious IP Address</h6>
+                                                    <p class="mb-2">Create firewall address object and deny policy to block communication with malicious IP addresses.</p>
+                                                    <div>
+                                                        <span class="badge badge-danger badge-custom">containment</span>
+                                                        <span class="badge badge-warning badge-custom">requires-approval</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 text-right">
+                                                    <small class="text-muted">Template ID:</small><br>
+                                                    <code>fortigate-block-ip</code>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <strong>What it does:</strong>
+                                                <ol class="mt-2 mb-2">
+                                                    <li>Creates a firewall address object for the malicious IP</li>
+                                                    <li>Creates a deny firewall policy targeting the IP address</li>
+                                                    <li>Places the policy at high priority for immediate enforcement</li>
+                                                    <li>Stores policy creation details as case artifact</li>
+                                                </ol>
+                                                <strong>API Endpoints:</strong> POST /api/v2/cmdb/firewall/address/, POST /api/v2/cmdb/firewall/policy/<br>
+                                                <strong>Use Cases:</strong> IOC blocking, malware C2 prevention, threat actor IP containment
+                                            </div>
+                                        </div>
+
+                                        <!-- Block Domain Playbook -->
+                                        <div class="playbook-item containment">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h6><i class="fas fa-globe mr-2"></i>Block Domain/URL</h6>
+                                                    <p class="mb-2">Use FortiGate web filter to block access to malicious domains and URLs.</p>
+                                                    <div>
+                                                        <span class="badge badge-danger badge-custom">containment</span>
+                                                        <span class="badge badge-info badge-custom">web-filtering</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 text-right">
+                                                    <small class="text-muted">Template ID:</small><br>
+                                                    <code>fortigate-block-domain</code>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <strong>What it does:</strong>
+                                                <ol class="mt-2 mb-2">
+                                                    <li>Creates a web filter URL filter for the malicious domain</li>
+                                                    <li>Configures the filter to block access with appropriate action</li>
+                                                    <li>Applies the filter to security policies as needed</li>
+                                                    <li>Documents the blocking action in case artifacts</li>
+                                                </ol>
+                                                <strong>API Endpoint:</strong> POST /api/v2/cmdb/webfilter/urlfilter/<br>
+                                                <strong>Use Cases:</strong> Phishing domain blocking, malware hosting sites, suspicious URL containment
+                                            </div>
+                                        </div>
+
+                                        <!-- Quarantine Host Playbook -->
+                                        <div class="playbook-item containment">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h6><i class="fas fa-user-lock mr-2"></i>Quarantine Host (Ban User/IP)</h6>
+                                                    <p class="mb-2">Temporarily ban users or IP addresses from network access for specified duration.</p>
+                                                    <div>
+                                                        <span class="badge badge-danger badge-custom">containment</span>
+                                                        <span class="badge badge-warning badge-custom">temporary</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 text-right">
+                                                    <small class="text-muted">Template ID:</small><br>
+                                                    <code>fortigate-quarantine-host</code>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <strong>What it does:</strong>
+                                                <ol class="mt-2 mb-2">
+                                                    <li>Adds user or IP address to FortiGate's banned user list</li>
+                                                    <li>Configures ban duration based on integration settings</li>
+                                                    <li>Verifies the ban is active through banned user list query</li>
+                                                    <li>Saves quarantine proof and details to case artifacts</li>
+                                                </ol>
+                                                <strong>API Endpoints:</strong> POST /api/v2/monitor/user/banned/add, GET /api/v2/monitor/user/banned/list<br>
+                                                <strong>Use Cases:</strong> Compromised host isolation, suspicious user containment, incident response quarantine
+                                            </div>
+                                        </div>
+
+                                        <div class="alert alert-warning mt-4">
+                                            <h6><i class="fas fa-exclamation-triangle mr-2"></i>VDOM Support</h6>
+                                            <p class="mb-0">FortiGate supports Virtual Domains (VDOMs) for multi-tenancy. Specify the correct VDOM name in the integration configuration. Use 'root' for single VDOM deployments or the specific VDOM name for multi-VDOM environments.</p>
+                                        </div>
+
+                                        <div class="alert alert-info mt-3">
+                                            <h6><i class="fas fa-database mr-2"></i>File Storage Convention</h6>
+                                            <p class="mb-0">All FortiGate SOAR results are stored in case artifacts following the pattern:</p>
+                                            <ul class="mb-0 mt-2">
+                                                <li><code>/cases/{case_id}/artifacts/fortigate/block_ip_{ip}_{job_id}.json</code></li>
+                                                <li><code>/cases/{case_id}/artifacts/fortigate/block_domain_{domain}_{job_id}.json</code></li>
+                                                <li><code>/cases/{case_id}/artifacts/fortigate/quarantine_{target}_{job_id}.json</code></li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="alert alert-success mt-3">
+                                            <h6><i class="fas fa-check-circle mr-2"></i>Integration Status</h6>
+                                            <p class="mb-2">The FortiGate integration framework is complete with:</p>
+                                            <ul class="mb-0">
+                                                <li><strong>API Authentication:</strong> Bearer token authentication with secure key storage</li>
+                                                <li><strong>Multi-Version Support:</strong> Compatible with FortiOS API v1 and v2</li>
+                                                <li><strong>VDOM Management:</strong> Full support for single and multi-VDOM environments</li>
+                                                <li><strong>Connection Testing:</strong> Real API validation with system status verification</li>
+                                                <li><strong>Error Handling:</strong> Comprehensive validation and user feedback</li>
+                                                <li><strong>Documentation:</strong> Complete setup and usage guide</li>
                                             </ul>
                                         </div>
                                     </div>

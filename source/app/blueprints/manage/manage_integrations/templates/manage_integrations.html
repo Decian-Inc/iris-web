@@ -68,6 +68,9 @@
         .haveibeenpwned-icon {
             color: #6f42c1;
         }
+        .fortigate-icon {
+            color: #e74c3c;
+        }
         .toggle-container {
             margin: 15px 0;
         }
@@ -648,6 +651,120 @@
                                             </form>
                                         </div>
                                     </div>
+
+                                    <!-- FortiGate Integration -->
+                                    <div class="integration-card">
+                                        <div class="integration-header">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-shield-alt fortigate-icon integration-icon"></i>
+                                                    <div>
+                                                        <h5 class="mb-1">FortiGate Firewall</h5>
+                                                        <small class="text-muted">Network security and IP blocking via FortiGate API</small>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <span class="status-badge {% if integrations.fortigate.enabled %}status-enabled{% else %}status-disabled{% endif %}">
+                                                        {% if integrations.fortigate.enabled %}Enabled{% else %}Disabled{% endif %}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="integration-body">
+                                            <form id="fortigate-form">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Enable Integration</label>
+                                                            <div class="toggle-container">
+                                                                <div class="custom-control custom-switch">
+                                                                    <input type="checkbox" class="custom-control-input" id="fortigate-enabled"
+                                                                           {% if integrations.fortigate.enabled %}checked{% endif %}>
+                                                                    <label class="custom-control-label" for="fortigate-enabled">
+                                                                        <span class="switch-text">Enable FortiGate integration</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="fortigate-base-url">FortiGate URL <span class="text-danger">*</span></label>
+                                                            <input type="url" class="form-control" id="fortigate-base-url"
+                                                                   placeholder="https://fortigate.example.com"
+                                                                   value="{{ integrations.fortigate.base_url }}">
+                                                            <small class="form-text text-muted">FortiGate management IP or FQDN</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="fortigate-api-key">API Key <span class="text-danger">*</span></label>
+                                                            <input type="password" class="form-control" id="fortigate-api-key"
+                                                                   placeholder="Enter FortiGate API key"
+                                                                   value="{{ integrations.fortigate.api_key }}">
+                                                            <small class="form-text text-muted">API token from FortiGate system</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="fortigate-api-version">API Version</label>
+                                                            <select class="form-control" id="fortigate-api-version">
+                                                                <option value="v2" {% if integrations.fortigate.api_version == 'v2' %}selected{% endif %}>v2 (Recommended)</option>
+                                                                <option value="v1" {% if integrations.fortigate.api_version == 'v1' %}selected{% endif %}>v1 (Legacy)</option>
+                                                            </select>
+                                                            <small class="form-text text-muted">FortiOS API version</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="fortigate-vdom">VDOM</label>
+                                                            <input type="text" class="form-control" id="fortigate-vdom"
+                                                                   placeholder="root"
+                                                                   value="{{ integrations.fortigate.vdom }}">
+                                                            <small class="form-text text-muted">Virtual Domain (default: root)</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="fortigate-quarantine-duration">Quarantine Duration (seconds)</label>
+                                                            <input type="number" class="form-control" id="fortigate-quarantine-duration" min="300" max="86400"
+                                                                   placeholder="3600"
+                                                                   value="{{ integrations.fortigate.quarantine_duration }}">
+                                                            <small class="form-text text-muted">Default host quarantine time (300-86400 seconds)</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="fortigate-verify-ssl"
+                                                                       {% if integrations.fortigate.verify_ssl %}checked{% endif %}>
+                                                                <label class="form-check-label" for="fortigate-verify-ssl">
+                                                                    Verify SSL certificates
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <button type="button" class="btn btn-info btn-sm" onclick="testConnection('fortigate')">
+                                                                <i class="fas fa-plug mr-1"></i>Test Connection
+                                                            </button>
+                                                            <button type="button" class="btn btn-success btn-sm ml-2" onclick="saveConfig('fortigate')">
+                                                                <i class="fas fa-save mr-1"></i>Save Configuration
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="fortigate-test-result" class="test-result" style="display: none;"></div>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -784,6 +901,8 @@ function testConnection(integrationType) {
         resultDiv = document.getElementById('meraki-test-result');
     } else if (integrationType === 'haveibeenpwned') {
         resultDiv = document.getElementById('hibp-test-result');
+    } else if (integrationType === 'fortigate') {
+        resultDiv = document.getElementById('fortigate-test-result');
     }
 
     // Show loading state
@@ -835,6 +954,18 @@ function testConnection(integrationType) {
             }
             if (data.data.api_version) {
                 resultDiv.innerHTML += `<br><small>API Version: ${data.data.api_version}</small>`;
+            }
+            if (data.data.fortigate_version) {
+                resultDiv.innerHTML += `<br><small>FortiGate Version: ${data.data.fortigate_version}</small>`;
+            }
+            if (data.data.serial_number) {
+                resultDiv.innerHTML += `<br><small>Serial Number: ${data.data.serial_number}</small>`;
+            }
+            if (data.data.hostname) {
+                resultDiv.innerHTML += `<br><small>Hostname: ${data.data.hostname}</small>`;
+            }
+            if (data.data.vdom) {
+                resultDiv.innerHTML += `<br><small>VDOM: ${data.data.vdom}</small>`;
             }
             if (data.data.response_time) {
                 resultDiv.innerHTML += `<br><small>Response Time: ${data.data.response_time}</small>`;
@@ -930,6 +1061,16 @@ function getConfigFromForm(integrationType) {
             base_url: document.getElementById('hibp-base-url').value,
             rate_limit_delay: parseFloat(document.getElementById('hibp-rate-limit').value),
             verify_ssl: document.getElementById('hibp-verify-ssl').checked
+        };
+    } else if (integrationType === 'fortigate') {
+        return {
+            enabled: document.getElementById('fortigate-enabled').checked,
+            base_url: document.getElementById('fortigate-base-url').value,
+            api_key: document.getElementById('fortigate-api-key').value,
+            api_version: document.getElementById('fortigate-api-version').value,
+            vdom: document.getElementById('fortigate-vdom').value,
+            quarantine_duration: parseInt(document.getElementById('fortigate-quarantine-duration').value),
+            verify_ssl: document.getElementById('fortigate-verify-ssl').checked
         };
     }
 }
