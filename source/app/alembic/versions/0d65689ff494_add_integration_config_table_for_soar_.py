@@ -18,24 +18,28 @@ depends_on = None
 
 
 def upgrade():
-    # Create integration_config table
-    op.create_table(
-        'integration_config',
-        sa.Column('config_id', sa.Integer(), nullable=False),
-        sa.Column('integration_type', sa.String(length=50), nullable=False),
-        sa.Column('enabled', sa.Boolean(), nullable=False, default=False),
-        sa.Column('config_data', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.Column('created_by', sa.String(length=255), nullable=True),
-        sa.Column('updated_by', sa.String(length=255), nullable=True),
-        sa.Column('description', sa.Text(), nullable=True),
-        sa.PrimaryKeyConstraint('config_id'),
-        sa.UniqueConstraint('integration_type')
-    )
+    # Use raw SQL with CREATE TABLE IF NOT EXISTS to handle conflicts gracefully
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS integration_config (
+            config_id SERIAL NOT NULL,
+            integration_type VARCHAR(50) NOT NULL,
+            enabled BOOLEAN NOT NULL DEFAULT FALSE,
+            config_data JSONB,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+            created_by VARCHAR(255),
+            updated_by VARCHAR(255),
+            description TEXT,
+            PRIMARY KEY (config_id),
+            UNIQUE (integration_type)
+        )
+    """)
 
-    # Create index on integration_type for faster lookups
-    op.create_index('ix_integration_config_type', 'integration_config', ['integration_type'])
+    # Create index if it doesn't exist
+    op.execute("""
+        CREATE INDEX IF NOT EXISTS ix_integration_config_type
+        ON integration_config (integration_type)
+    """)
 
 
 def downgrade():
