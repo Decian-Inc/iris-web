@@ -88,7 +88,7 @@ pipeline {
 
                     docker.withRegistry('https://nexus-registry.decian.net', 'nexus-docker-writer-username-password') {
                           sh """
-                            docker build --build-arg VERSION=$version --push $dockerBuildCommandTags ./docker/webApp
+                            docker build --build-arg VERSION=$version --push $dockerBuildCommandTags -f ./docker/webApp/Dockerfile .
                           """
                     }
                 }
