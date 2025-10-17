@@ -37,6 +37,7 @@ from app.models import CasesEvent
 from app.models import CeleryTaskMeta
 from app.models import GlobalTasks
 from app.models import Ioc
+from app.models import IocLink
 from app.models import IrisHook
 from app.models import IrisModule
 from app.models import IrisModuleHook
@@ -131,7 +132,12 @@ def dim_hooks_call(caseid):
             return response_error('Invalid target')
 
         if data_type == 'ioc':
-            obj = Ioc.query.filter(Ioc.ioc_id == target).first()
+            obj = Ioc.query.join(
+                IocLink, IocLink.ioc_id == Ioc.ioc_id
+            ).filter(
+                Ioc.ioc_id == target,
+                IocLink.case_id == caseid
+            ).first()
 
         elif data_type == "case":
             obj = Cases.query.filter(Cases.case_id == caseid).first()

@@ -17,7 +17,12 @@
       "Bash(find:*)",
       "WebSearch",
       "Bash(git checkout:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Read(//c/users/mcdow/appdata/roaming/lens/kubeconfigs//**)",
+      "Bash(export KUBECONFIG=\"/c/users/mcdow/appdata/roaming/lens/kubeconfigs/f4bafbd6-f801-45d5-999d-b0de5bf73076-pasted-kubeconfig.yaml\")",
+      "Bash(kubectl get:*)",
+      "Bash(export KUBECONFIG=\"C:\\Users\\mcdow\\AppData\\Roaming\\Lens\\kubeconfigs\\f4bafbd6-f801-45d5-999d-b0de5bf73076-pasted-kubeconfig.yaml\")",
+      "Bash(kubectl logs:*)"
     ],
     "deny": [],
     "ask": []
