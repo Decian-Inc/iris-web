@@ -17,6 +17,7 @@
 #  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import json
+import logging as log
 import os
 import pickle
 from flask import Blueprint
@@ -195,6 +196,10 @@ def dim_hooks_call(caseid):
         index += 1
 
     if len(obj_targets) > 0:
+        # Ensure we have a valid case ID before calling modules
+        if not caseid:
+            log.warning(f"No case ID available for hook {hook_name}. This may cause issues with note creation.")
+
         call_modules_hook(hook_name=hook_name, hook_ui_name=hook_ui_name, data=obj_targets,
                           caseid=caseid, module_name=module_name)
 

@@ -125,7 +125,7 @@ class IrisAbuseIPDBInterface(IrisModuleInterface):
                 # SQLAlchemy model object
                 ioc_value = ioc_obj.ioc_value
                 ioc_type = getattr(ioc_obj.ioc_type, 'type_name', '').lower() if hasattr(ioc_obj, 'ioc_type') else ''
-                # Get case_id from session context since IOC model may not have direct case_id
+                # Get case_id from module instance first, then session context
                 case_id = getattr(self, 'case_id', None) or self._get_case_id_from_session()
             elif isinstance(ioc_obj, dict):
                 # Dictionary format
@@ -137,6 +137,9 @@ class IrisAbuseIPDBInterface(IrisModuleInterface):
 
             if not ioc_value:
                 return InterfaceStatus.I2Error(data=data, logs=["No IOC value provided"])
+
+            # Log case ID for debugging
+            self.log.info(f"Processing IOC {ioc_value} with case_id: {case_id}")
 
             # Only process IP addresses
             if not self._is_valid_ip(ioc_value):
@@ -313,17 +316,17 @@ class IrisAbuseIPDBInterface(IrisModuleInterface):
         """
         Get case_id from Flask session context
 
-        :return: Case ID if available, otherwise 1 (default case)
+        :return: Case ID if available, otherwise None
         """
         try:
             from flask import g
             if hasattr(g, 'case_id'):
                 return g.case_id
-            # Fallback to default case if no session context
-            return 1
+            # Return None if no session context available
+            return None
         except:
-            # If Flask context is not available, use default case
-            return 1
+            # If Flask context is not available, return None
+            return None
 
     def _sanitize_log_output(self, log_line):
         """Sanitize log output to remove sensitive information"""
