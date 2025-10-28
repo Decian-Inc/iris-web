@@ -24,9 +24,17 @@ from flask import redirect
 from flask import render_template
 from flask import request
 from flask import url_for
+from flask import send_file
+from flask import make_response
 from flask_login import current_user
 from flask_wtf import FlaskForm
 from marshmallow import ValidationError
+from io import BytesIO
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
 
 from app import ac_current_user_has_permission
 from app.datamgmt.client.client_db import create_client
@@ -415,3 +423,197 @@ def delete_contact_route(client_id, contact_id):
     track_activity(f"Deleted Customer with ID {contact_id}", ctx_less=True)
 
     return response_success("Deleted successfully")
+
+
+def generate_customer_activity_report(client_id):
+    """
+    Generate PDF report for customer activity including cases from the past month
+    """
+    # Get customer information
+    customer = get_client_api(client_id)
+    if not customer:
+        return None
+
+    # Get customer cases with statistics
+    cases_data = get_client_cases(client_id)
+
+    # Calculate statistics for the past month
+    now = datetime.date.today()
+    last_month_start = now - datetime.timedelta(days=30)
+
+    past_month_cases = []
+    for case in cases_data:
+        if case.open_date >= last_month_start:
+            past_month_cases.append(case)
+
+    # Create PDF buffer
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    styles = getSampleStyleSheet()
+    story = []
+
+    # Title
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.darkblue,
+        spaceAfter=30,
+        alignment=1  # Center alignment
+    )
+
+    story.append(Paragraph(f"Customer Activity Report", title_style))
+    story.append(Paragraph(f"{customer['customer_name']} (#{customer['customer_id']})", styles['Heading2']))
+    story.append(Spacer(1, 20))
+
+    # Report generation date
+    story.append(Paragraph(f"Report Generated: {now.strftime('%B %d, %Y')}", styles['Normal']))
+    story.append(Paragraph(f"Period: Past 30 days ({last_month_start.strftime('%B %d, %Y')} - {now.strftime('%B %d, %Y')})", styles['Normal']))
+    story.append(Spacer(1, 30))
+
+    # Customer Overview Section
+    story.append(Paragraph("Customer Overview", styles['Heading2']))
+    story.append(Spacer(1, 10))
+
+    customer_info = [
+        ['Customer Name:', customer['customer_name']],
+        ['Customer ID:', f"#{customer['customer_id']}"],
+        ['Description:', customer.get('customer_description', 'N/A')],
+        ['SLA:', customer.get('customer_sla', 'N/A')]
+    ]
+
+    customer_table = Table(customer_info, colWidths=[2*inch, 4*inch])
+    customer_table.setStyle(TableStyle([
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(customer_table)
+    story.append(Spacer(1, 30))
+
+    # Cases Statistics Section
+    story.append(Paragraph("Cases Summary - Past 30 Days", styles['Heading2']))
+    story.append(Spacer(1, 10))
+
+    total_cases = len(cases_data)
+    recent_cases = len(past_month_cases)
+    open_cases = len([c for c in cases_data if c.close_date is None])
+
+    stats_info = [
+        ['Total Cases (All Time):', str(total_cases)],
+        ['Cases Opened (Past 30 Days):', str(recent_cases)],
+        ['Currently Open Cases:', str(open_cases)],
+    ]
+
+    stats_table = Table(stats_info, colWidths=[3*inch, 2*inch])
+    stats_table.setStyle(TableStyle([
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+        ('GRID', (0,0), (-1,-1), 1, colors.lightgrey),
+    ]))
+    story.append(stats_table)
+    story.append(Spacer(1, 30))
+
+    # Recent Cases Details Section
+    if past_month_cases:
+        story.append(Paragraph("Cases Opened in Past 30 Days", styles['Heading2']))
+        story.append(Spacer(1, 10))
+
+        case_data = [['Case Name', 'Open Date', 'State', 'Severity']]
+
+        for case in past_month_cases:
+            case_data.append([
+                case.name,
+                case.open_date.strftime('%Y-%m-%d'),
+                case.state.state_name if case.state else 'Unknown',
+                case.severity.severity_name if hasattr(case, 'severity') and case.severity else 'N/A'
+            ])
+
+        case_table = Table(case_data, colWidths=[3*inch, 1.2*inch, 1*inch, 1*inch])
+        case_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.lightblue),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,-1), 9),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+            ('GRID', (0,0), (-1,-1), 1, colors.black),
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ]))
+        story.append(case_table)
+    else:
+        story.append(Paragraph("No cases opened in the past 30 days.", styles['Normal']))
+
+    story.append(Spacer(1, 30))
+
+    # Footer
+    story.append(Paragraph(
+        "This report was generated automatically by Ironclad Case Management System.",
+        styles['Normal']
+    ))
+
+    # Build PDF
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
+
+@manage_customers_blueprint.route('/manage/customers/<int:client_id>/report/download', methods=['GET'])
+@ac_requires(Permissions.customers_read, no_cid_required=True)
+@ac_requires_client_access()
+def download_customer_report(client_id, caseid, url_redir):
+    """Download customer activity report as PDF"""
+    if url_redir:
+        return redirect(url_for('manage_customers.manage_customers', cid=caseid))
+
+    try:
+        pdf_buffer = generate_customer_activity_report(client_id)
+        if not pdf_buffer:
+            return response_error("Could not generate report - customer not found")
+
+        customer = get_client_api(client_id)
+        filename = f"customer_{client_id}_{customer['customer_name'].replace(' ', '_')}_activity_report.pdf"
+
+        track_activity(f"Downloaded customer activity report for {customer['customer_name']}", ctx_less=True)
+
+        return send_file(
+            pdf_buffer,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+
+    except Exception as e:
+        print(traceback.format_exc())
+        return response_error(f"Error generating report: {str(e)}")
+
+
+@manage_customers_blueprint.route('/manage/customers/<int:client_id>/report/preview', methods=['GET'])
+@ac_requires(Permissions.customers_read, no_cid_required=True)
+@ac_requires_client_access()
+def preview_customer_report(client_id, caseid, url_redir):
+    """Preview customer activity report in browser"""
+    if url_redir:
+        return redirect(url_for('manage_customers.manage_customers', cid=caseid))
+
+    try:
+        pdf_buffer = generate_customer_activity_report(client_id)
+        if not pdf_buffer:
+            return response_error("Could not generate report - customer not found")
+
+        customer = get_client_api(client_id)
+        filename = f"customer_{client_id}_{customer['customer_name'].replace(' ', '_')}_activity_report.pdf"
+
+        track_activity(f"Previewed customer activity report for {customer['customer_name']}", ctx_less=True)
+
+        response = make_response(pdf_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'inline; filename="{filename}"'
+        return response
+
+    except Exception as e:
+        print(traceback.format_exc())
+        return response_error(f"Error generating report: {str(e)}")

@@ -99,6 +99,48 @@
 				<div class="row">
 					<div class="col-12">
 						<div class="card card-customer">
+							<div class="card-header">
+								<div class="row">
+									<div class="col-12">
+										<div class="row">
+											<h3><strong><i class="ml-1 fa-solid fa-file-pdf mr-1"></i> Reports</strong></h3>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="card-body">
+								<div class="row">
+									<div class="col-md-4">
+										<h5><b>Customer Activity Report</b></h5>
+										<p class="text-muted">Generate a comprehensive PDF report containing case statistics, recent activity, and case details for the past month.</p>
+									</div>
+									<div class="col-md-4">
+										<h5><b>Report Contents</b></h5>
+										<ul class="text-muted">
+											<li>Customer overview and statistics</li>
+											<li>Cases opened in the past month</li>
+											<li>Case names and severity levels</li>
+											<li>Activity summary</li>
+										</ul>
+									</div>
+									<div class="col-md-4 d-flex align-items-center">
+										<div class="w-100">
+											<button class="btn btn-primary btn-block" onclick="generateCustomerReport('{{ customer.customer_id }}');">
+												<i class="fa-solid fa-download mr-2"></i>Generate PDF Report
+											</button>
+											<button class="btn btn-outline-secondary btn-block mt-2" onclick="previewCustomerReport('{{ customer.customer_id }}');">
+												<i class="fa-solid fa-eye mr-2"></i>Preview Report
+											</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-12">
+						<div class="card card-customer">
 							<div class="card-body">
 								<div class="row">
 									<div class="col-md-3 info-customer">
