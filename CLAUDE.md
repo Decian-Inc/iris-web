@@ -71,6 +71,11 @@ docker-compose -f docker-compose.yml up
 - Follow project's testing patterns
 - Run linting/typecheck commands before commits
 
+### Pipeline Testing
+- **IMPORTANT**: When making changes to source files (templates, CSS, Python), always test with the Jenkins pipeline build process
+- See `PIPELINE-TESTING.md` for detailed instructions on testing local changes
+- Use Jenkins-style build command to verify changes will be included in production: `docker build --build-arg VERSION=test -t iris-web-test -f ./docker/webApp/Dockerfile .`
+
 ## Key Directories
 - `source/app/blueprints/` - Route definitions
 - `source/app/datamgmt/` - Database operations
