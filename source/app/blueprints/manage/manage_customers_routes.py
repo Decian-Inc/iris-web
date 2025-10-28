@@ -522,14 +522,14 @@ def generate_customer_activity_report(client_id):
         story.append(Paragraph("Cases Opened in Past 30 Days", styles['Heading2']))
         story.append(Spacer(1, 10))
 
-        case_data = [['Case Name', 'Open Date', 'State', 'Severity']]
+        case_data = [['Case Name', 'Open Date', 'Case ID', 'Owner']]
 
         for case in past_month_cases:
             case_data.append([
-                case.name,
+                case.case_name,
                 case.open_date.strftime('%Y-%m-%d'),
-                case.state.state_name if case.state else 'Unknown',
-                case.severity.severity_name if hasattr(case, 'severity') and case.severity else 'N/A'
+                f"#{case.case_id}",
+                case.case_owner
             ])
 
         case_table = Table(case_data, colWidths=[3*inch, 1.2*inch, 1*inch, 1*inch])
