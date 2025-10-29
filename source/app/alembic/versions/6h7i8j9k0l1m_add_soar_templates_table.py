@@ -17,8 +17,13 @@ depends_on = None
 
 
 def upgrade():
-    # Create soar_templates table
-    op.create_table('soar_templates',
+    # Check if tables already exist before creating them
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+
+    # Create soar_templates table only if it doesn't exist
+    if 'soar_templates' not in inspector.get_table_names():
+        op.create_table('soar_templates',
         sa.Column('template_id', sa.String(length=50), nullable=False),
         sa.Column('template_name', sa.String(length=200), nullable=False),
         sa.Column('description', sa.Text(), nullable=True),
@@ -38,13 +43,21 @@ def upgrade():
         sa.ForeignKeyConstraint(['created_by'], ['user.id'], ),
         sa.ForeignKeyConstraint(['updated_by'], ['user.id'], ),
         sa.PrimaryKeyConstraint('template_id')
-    )
+        )
 
-    # Create indexes for better performance
-    op.create_index('ix_soar_templates_integration_type', 'soar_templates', ['integration_type'])
-    op.create_index('ix_soar_templates_requires_approval', 'soar_templates', ['requires_approval'])
-    op.create_index('ix_soar_templates_is_active', 'soar_templates', ['is_active'])
-    op.create_index('ix_soar_templates_created_at', 'soar_templates', ['created_at'])
+    # Create indexes for better performance (only if table exists)
+    existing_indexes = []
+    if 'soar_templates' in inspector.get_table_names():
+        existing_indexes = [idx['name'] for idx in inspector.get_indexes('soar_templates')]
+
+    if 'ix_soar_templates_integration_type' not in existing_indexes and 'soar_templates' in inspector.get_table_names():
+        op.create_index('ix_soar_templates_integration_type', 'soar_templates', ['integration_type'])
+    if 'ix_soar_templates_requires_approval' not in existing_indexes and 'soar_templates' in inspector.get_table_names():
+        op.create_index('ix_soar_templates_requires_approval', 'soar_templates', ['requires_approval'])
+    if 'ix_soar_templates_is_active' not in existing_indexes and 'soar_templates' in inspector.get_table_names():
+        op.create_index('ix_soar_templates_is_active', 'soar_templates', ['is_active'])
+    if 'ix_soar_templates_created_at' not in existing_indexes and 'soar_templates' in inspector.get_table_names():
+        op.create_index('ix_soar_templates_created_at', 'soar_templates', ['created_at'])
 
 
 def downgrade():
