@@ -36,7 +36,7 @@ from app import db
 from app.datamgmt.case.case_db import get_case
 from app.models import Cases
 from app.models.authorization import CaseAccessLevel
-from app.util import response_success, response_error, ac_api_case_requires
+from app.util import response_success, response_error, ac_api_case_requires, ac_requires_case_identifier
 from app.blueprints.manage.manage_integrations.manage_integrations_routes import get_integrations_config
 
 soar_blueprint = Blueprint('soar',
@@ -338,7 +338,7 @@ def soar_test():
     return jsonify({"status": "success", "message": "Test route working"})
 
 @soar_blueprint.route('/soar/jobs', methods=['POST'])
-@ac_api_case_requires(CaseAccessLevel.full_access)
+@ac_requires_case_identifier()
 def soar_jobs_create(caseid):
     """
     API endpoint to create and execute a SOAR job
