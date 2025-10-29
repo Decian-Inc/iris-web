@@ -19,6 +19,8 @@
 import json
 import logging as log
 import traceback
+import requests
+import time
 from flask import Blueprint
 from flask import redirect
 from flask import render_template
@@ -97,11 +99,14 @@ def save_integration_config():
 
 @manage_integrations_blueprint.route('/manage/integrations/test', methods=['POST'])
 @login_required
-@ac_requires(Permissions.server_administrator)
-def test_integration_connection():
+@ac_requires(Permissions.server_administrator, no_cid_required=True)
+def test_integration_connection(caseid, url_redir):
     """
     Test integration connection
     """
+    if url_redir:
+        return redirect(url_for('manage_integrations.manage_integrations_index', cid=caseid))
+
     try:
         data = request.get_json()
         integration_type = data.get('integration_type')
@@ -303,26 +308,93 @@ def test_velociraptor_connection(config):
 
 def test_sentinelone_connection(config):
     """
-    Test SentinelOne connection
+    Test SentinelOne connection using v2.1 Management Console API
     """
     try:
         base_url = config.get('base_url')
         api_token = config.get('api_token')
+        verify_ssl = config.get('verify_ssl', True)
 
         if not base_url or not api_token:
-            return {'success': False, 'message': 'Missing required configuration'}
+            return {'success': False, 'message': 'Missing base_url or api_token configuration'}
 
-        # Here you would implement actual connection test
-        # For now, return mock response
-        return {
-            'success': True,
-            'message': 'Connection test successful',
-            'account_name': 'Mock Account',
-            'response_time': '312ms'
+        # Clean up base URL
+        base_url = base_url.rstrip('/')
+
+        # Prepare headers with proper ApiToken format as per SentinelOne v2.1 API
+        headers = {
+            'Authorization': f'ApiToken {api_token}',
+            'Content-Type': 'application/json'
         }
 
+        # Test connection using the agents endpoint with minimal data request
+        test_endpoint = f'{base_url}/web/api/v2.1/agents'
+        params = {'limit': 1}  # Minimal request to test connectivity
+
+        start_time = time.time()
+
+        # Make the API call with proper timeout and SSL verification
+        response = requests.get(
+            test_endpoint,
+            headers=headers,
+            params=params,
+            verify=verify_ssl,
+            timeout=30
+        )
+
+        end_time = time.time()
+        response_time = int((end_time - start_time) * 1000)  # Convert to milliseconds
+
+        if response.status_code == 200:
+            response_data = response.json()
+
+            # Extract account information if available
+            account_name = 'SentinelOne Management Console'
+            if 'pagination' in response_data:
+                total_count = response_data.get('pagination', {}).get('totalItems', 0)
+                account_name = f'SentinelOne Console ({total_count} agents)'
+
+            return {
+                'success': True,
+                'message': 'Connection test successful - SentinelOne API responding',
+                'account_name': account_name,
+                'response_time': f'{response_time}ms',
+                'api_version': 'v2.1',
+                'status_code': response.status_code
+            }
+        elif response.status_code == 401:
+            return {
+                'success': False,
+                'message': 'Authentication failed - Invalid API token or insufficient permissions',
+                'status_code': response.status_code,
+                'response_time': f'{response_time}ms'
+            }
+        elif response.status_code == 403:
+            return {
+                'success': False,
+                'message': 'Access forbidden - API token lacks required permissions',
+                'status_code': response.status_code,
+                'response_time': f'{response_time}ms'
+            }
+        else:
+            return {
+                'success': False,
+                'message': f'API returned error status {response.status_code}: {response.text[:200]}',
+                'status_code': response.status_code,
+                'response_time': f'{response_time}ms'
+            }
+
+    except requests.exceptions.Timeout:
+        return {'success': False, 'message': 'Connection timed out - Check base_url and network connectivity'}
+    except requests.exceptions.ConnectionError:
+        return {'success': False, 'message': 'Connection failed - Unable to reach SentinelOne server. Verify base_url is correct.'}
+    except requests.exceptions.SSLError:
+        return {'success': False, 'message': 'SSL certificate verification failed - Check verify_ssl setting or certificate validity'}
+    except requests.exceptions.RequestException as e:
+        return {'success': False, 'message': f'Request failed: {str(e)}'}
     except Exception as e:
-        return {'success': False, 'message': f'Connection failed: {str(e)}'}
+        log.error(f"Unexpected error in SentinelOne connection test: {str(e)}")
+        return {'success': False, 'message': f'Connection test failed: {str(e)}'}
 
 
 def test_connectwise_connection(config):
