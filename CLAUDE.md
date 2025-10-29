@@ -76,6 +76,15 @@ docker-compose -f docker-compose.yml up
 - See `PIPELINE-TESTING.md` for detailed instructions on testing local changes
 - Use Jenkins-style build command to verify changes will be included in production: `docker build --build-arg VERSION=test -t iris-web-test -f ./docker/webApp/Dockerfile .`
 
+### Kubernetes Debugging
+- **ALWAYS export kubeconfig first**: `export KUBECONFIG="C:\Users\mcdow\AppData\Roaming\Lens\kubeconfigs\f4bafbd6-f801-45d5-999d-b0de5bf73076-pasted-kubeconfig.yaml"`
+- **Find IRIS pods**: `kubectl get pods | grep iris-app`
+- **App pod**: Usually named like `iris-app-app-xxxxxxxxx-xxxxx`
+- **Worker pod**: Usually named like `iris-app-worker-xxxxxxxxx-xxxxx`
+- **Check app logs**: `kubectl logs <iris-app-pod-name> --tail=50`
+- **Check worker logs**: `kubectl logs <iris-worker-pod-name> --tail=50`
+- **Exec into pod**: `kubectl exec <pod-name> -- <command>`
+
 ## Key Directories
 - `source/app/blueprints/` - Route definitions
 - `source/app/datamgmt/` - Database operations

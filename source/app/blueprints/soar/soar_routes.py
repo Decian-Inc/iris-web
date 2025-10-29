@@ -2291,7 +2291,7 @@ def add_soar_job_step(job_id, step_name, step_order, status='Running', result_me
         return None
 
 
-def update_soar_job_step(step_id, status=None, result_message=None, error_message=None):
+def update_soar_job_step(step_id, status=None, result_message=None, error_message=None, completed_at=None):
     """
     Update a SOAR job step
     """
@@ -2306,7 +2306,9 @@ def update_soar_job_step(step_id, status=None, result_message=None, error_messag
             step.result_message = result_message
         if error_message:
             step.error_message = error_message
-        if status in ['Completed', 'Failed']:
+        if completed_at:
+            step.completed_at = completed_at
+        elif status in ['Completed', 'Failed']:
             step.completed_at = datetime.now()
 
         db.session.commit()
