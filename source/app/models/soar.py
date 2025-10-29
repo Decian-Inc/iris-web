@@ -125,7 +125,7 @@ class SoarJob(db.Model):
 
     # Relationships
     case = relationship("Cases", backref="soar_jobs")
-    executor = relationship("User", backref="executed_soar_jobs")
+    executor = relationship("User", foreign_keys=[executor_id], backref="executed_soar_jobs")
     approver = relationship("User", foreign_keys=[approved_by], backref="approved_soar_jobs")
     steps = relationship("SoarJobStep", backref="job", cascade="all, delete-orphan")
     artifacts = relationship("SoarJobArtifact", backref="job", cascade="all, delete-orphan")
