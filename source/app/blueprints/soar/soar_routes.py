@@ -2233,7 +2233,7 @@ def create_soar_job(case_id, template_id, template_name, integration_type, targe
         return None
 
 
-def update_soar_job(job_id, status=None, result_data=None, error_message=None, completed_at=None):
+def update_soar_job(job_id, status=None, result_data=None, error_message=None, completed_at=None, started_at=None):
     """
     Update a SOAR job record in the database
     """
@@ -2248,6 +2248,8 @@ def update_soar_job(job_id, status=None, result_data=None, error_message=None, c
             job.result_data = result_data
         if error_message:
             job.error_message = error_message
+        if started_at:
+            job.started_at = started_at
         if completed_at:
             job.completed_at = completed_at
         elif status in ['Completed', 'Failed']:
