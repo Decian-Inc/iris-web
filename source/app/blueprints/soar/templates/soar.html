@@ -144,7 +144,7 @@
 
         <div class="page-inner soar-container">
             <div class="row">
-                <!-- Left Column: Job Catalog -->
+                <!-- Left Column: Job Templates -->
                 <div class="col-md-4">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
@@ -156,27 +156,67 @@
                             </button>
                         </div>
                         <div class="card-body">
-                            <!-- Filters -->
-                            <div class="mb-3">
-                                <input type="text" class="form-control form-control-sm mb-2"
-                                       id="template-search" placeholder="Search templates...">
-                                <select class="form-control form-control-sm mb-2" id="vendor-filter">
-                                    <option value="">All Vendors</option>
-                                    <option value="SentinelOne">SentinelOne</option>
-                                    <option value="Velociraptor">Velociraptor</option>
-                                </select>
-                                <select class="form-control form-control-sm" id="category-filter">
-                                    <option value="">All Categories</option>
-                                    <option value="containment">Containment</option>
-                                    <option value="forensics">Forensics</option>
-                                    <option value="triage">Triage</option>
+                            <!-- Template Selection Dropdown -->
+                            <div class="form-group">
+                                <label for="template-selector" class="form-label">Select Template:</label>
+                                <select id="template-selector" class="form-control">
+                                    <option value="">Choose a job template...</option>
                                 </select>
                             </div>
 
-                            <!-- Template List -->
-                            <div id="templates-list">
-                                <div class="text-center p-3">
-                                    <i class="fas fa-spinner fa-spin"></i> Loading templates...
+                            <!-- Quick Filters -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <select class="form-control form-control-sm" id="vendor-filter">
+                                        <option value="">All Vendors</option>
+                                        <option value="SentinelOne">SentinelOne</option>
+                                        <option value="Velociraptor">Velociraptor</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <select class="form-control form-control-sm" id="category-filter">
+                                        <option value="">All Categories</option>
+                                        <option value="containment">Containment</option>
+                                        <option value="forensics">Forensics</option>
+                                        <option value="triage">Triage</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Selected Template Details -->
+                            <div id="template-details" class="d-none">
+                                <div class="alert alert-light border">
+                                    <h6 id="template-name" class="mb-2"></h6>
+                                    <p id="template-description" class="text-muted small mb-2"></p>
+                                    <div id="template-tags" class="mb-2"></div>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">
+                                            <i class="fas fa-building mr-1"></i><span id="template-vendor"></span>
+                                        </small>
+                                        <span id="template-approval-badge"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Template Statistics -->
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <div class="font-weight-bold" id="total-templates">0</div>
+                                        <small class="text-muted">Templates</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <div class="font-weight-bold text-warning" id="pending-approval">0</div>
+                                        <small class="text-muted">Pending</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <div class="font-weight-bold text-success" id="available-templates">0</div>
+                                        <small class="text-muted">Available</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -311,13 +351,21 @@ $(document).ready(function() {
 });
 
 function setupEventHandlers() {
-    // Template selection
-    $(document).on('click', '.job-template-card', function() {
-        $('.job-template-card').removeClass('selected');
-        $(this).addClass('selected');
-
-        let templateId = $(this).data('template-id');
-        selectTemplate(templateId);
+    // Template selection dropdown
+    $('#template-selector').on('change', function() {
+        let templateId = $(this).val();
+        if (templateId) {
+            selectTemplate(templateId);
+            $('#template-details').removeClass('d-none');
+        } else {
+            $('#template-details').addClass('d-none');
+            $('#job-config-panel').html(`
+                <div class="text-center text-muted p-4">
+                    <i class="fas fa-mouse-pointer fa-2x mb-2"></i>
+                    <p>Select a job template to configure and run</p>
+                </div>
+            `);
+        }
     });
 
     // Run job button
@@ -336,9 +384,9 @@ function setupEventHandlers() {
         requestApproval();
     });
 
-    // Search and filters
-    $('#template-search, #vendor-filter, #category-filter').on('input change', function() {
-        filterTemplates();
+    // Filters
+    $('#vendor-filter, #category-filter').on('change', function() {
+        filterTemplateDropdown();
     });
 }
 
@@ -360,48 +408,75 @@ function loadTemplates() {
 }
 
 function renderTemplates(templates) {
-    let html = '';
+    // Store templates globally for filtering and details
+    window.allTemplates = templates;
+
+    // Populate dropdown
+    let dropdownHtml = '<option value="">Choose a job template...</option>';
     templates.forEach(template => {
-        let tagsHtml = template.tags.map(tag =>
-            `<span class="template-tag ${tag}">${tag}</span>`
-        ).join('');
-
-        let approvalBadge = template.requires_approval ?
-            '<span class="badge badge-warning badge-sm ml-2">Approval Required</span>' : '';
-
-        html += `
-            <div class="job-template-card" data-template-id="${template.id}">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h6 class="mb-0">${template.name}</h6>
-                    ${approvalBadge}
-                </div>
-                <p class="text-muted small mb-2">${template.description}</p>
-                <div class="mb-2">${tagsHtml}</div>
-                <small class="text-muted">
-                    <i class="fas fa-building mr-1"></i>${template.vendor}
-                </small>
-            </div>
+        let approvalIndicator = template.requires_approval ? ' [Approval Required]' : '';
+        dropdownHtml += `
+            <option value="${template.id}"
+                    data-vendor="${template.vendor}"
+                    data-tags="${template.tags.join(',')}"
+                    data-approval="${template.requires_approval}">
+                ${template.name} - ${template.vendor}${approvalIndicator}
+            </option>
         `;
     });
+    $('#template-selector').html(dropdownHtml);
 
-    $('#templates-list').html(html);
+    // Update statistics
+    let totalTemplates = templates.length;
+    let pendingApproval = templates.filter(t => t.requires_approval).length;
+    let availableTemplates = totalTemplates - pendingApproval;
+
+    $('#total-templates').text(totalTemplates);
+    $('#pending-approval').text(pendingApproval);
+    $('#available-templates').text(availableTemplates);
 }
 
 function selectTemplate(templateId) {
     selectedTemplate = templateId;
 
-    // Find template data (in real implementation, fetch from API)
-    let template = {
-        id: templateId,
-        name: templateId === 'sentinel1-quarantine' ? 'SentinelOne Quarantine Host' : 'Velociraptor Forensic Collection',
-        description: templateId === 'sentinel1-quarantine' ?
-            'Quarantine a host using SentinelOne API' :
-            'Collect forensic artifacts using Velociraptor',
-        requires_approval: templateId === 'sentinel1-quarantine',
-        allowed_target_types: ['agent_id', 'hostname']
-    };
+    // Find template data from stored templates
+    let template = window.allTemplates ?
+        window.allTemplates.find(t => t.id === templateId) :
+        {
+            id: templateId,
+            name: templateId === 'sentinel1-quarantine' ? 'SentinelOne Quarantine Host' : 'Velociraptor Forensic Collection',
+            description: templateId === 'sentinel1-quarantine' ?
+                'Quarantine a host using SentinelOne API' :
+                'Collect forensic artifacts using Velociraptor',
+            requires_approval: templateId === 'sentinel1-quarantine',
+            vendor: templateId === 'sentinel1-quarantine' ? 'SentinelOne' : 'Velociraptor',
+            tags: templateId === 'sentinel1-quarantine' ? ['containment'] : ['forensics'],
+            allowed_target_types: ['agent_id', 'hostname']
+        };
 
+    // Update template details section
+    updateTemplateDetails(template);
+
+    // Update job configuration panel
     renderJobConfig(template);
+}
+
+function updateTemplateDetails(template) {
+    $('#template-name').text(template.name);
+    $('#template-description').text(template.description);
+    $('#template-vendor').text(template.vendor);
+
+    // Render tags
+    let tagsHtml = template.tags.map(tag =>
+        `<span class="template-tag ${tag}">${tag}</span>`
+    ).join('');
+    $('#template-tags').html(tagsHtml);
+
+    // Render approval badge
+    let approvalBadge = template.requires_approval ?
+        '<span class="badge badge-warning badge-sm">Approval Required</span>' :
+        '<span class="badge badge-success badge-sm">Ready to Run</span>';
+    $('#template-approval-badge').html(approvalBadge);
 }
 
 function renderJobConfig(template) {
@@ -650,29 +725,55 @@ function requestApproval() {
     $('#approvalModal').modal('hide');
 }
 
-function filterTemplates() {
-    let search = $('#template-search').val().toLowerCase();
+function filterTemplateDropdown() {
     let vendor = $('#vendor-filter').val();
     let category = $('#category-filter').val();
 
-    $('.job-template-card').each(function() {
-        let card = $(this);
-        let text = card.text().toLowerCase();
-        let cardVendor = card.find('.fas.fa-building').parent().text().trim();
-        let cardCategories = card.find('.template-tag').map(function() {
-            return $(this).text();
-        }).get();
+    if (!window.allTemplates) return;
 
-        let matchesSearch = !search || text.includes(search);
-        let matchesVendor = !vendor || cardVendor.includes(vendor);
-        let matchesCategory = !category || cardCategories.includes(category);
-
-        if (matchesSearch && matchesVendor && matchesCategory) {
-            card.show();
-        } else {
-            card.hide();
-        }
+    // Filter templates based on criteria
+    let filteredTemplates = window.allTemplates.filter(template => {
+        let matchesVendor = !vendor || template.vendor === vendor;
+        let matchesCategory = !category || template.tags.includes(category);
+        return matchesVendor && matchesCategory;
     });
+
+    // Update dropdown options
+    let dropdownHtml = '<option value="">Choose a job template...</option>';
+    filteredTemplates.forEach(template => {
+        let approvalIndicator = template.requires_approval ? ' [Approval Required]' : '';
+        dropdownHtml += `
+            <option value="${template.id}"
+                    data-vendor="${template.vendor}"
+                    data-tags="${template.tags.join(',')}"
+                    data-approval="${template.requires_approval}">
+                ${template.name} - ${template.vendor}${approvalIndicator}
+            </option>
+        `;
+    });
+    $('#template-selector').html(dropdownHtml);
+
+    // Update statistics for filtered templates
+    let totalTemplates = filteredTemplates.length;
+    let pendingApproval = filteredTemplates.filter(t => t.requires_approval).length;
+    let availableTemplates = totalTemplates - pendingApproval;
+
+    $('#total-templates').text(totalTemplates);
+    $('#pending-approval').text(pendingApproval);
+    $('#available-templates').text(availableTemplates);
+
+    // Hide template details if current selection is filtered out
+    if (selectedTemplate && !filteredTemplates.find(t => t.id === selectedTemplate)) {
+        $('#template-details').addClass('d-none');
+        $('#template-selector').val('');
+        selectedTemplate = null;
+        $('#job-config-panel').html(`
+            <div class="text-center text-muted p-4">
+                <i class="fas fa-mouse-pointer fa-2x mb-2"></i>
+                <p>Select a job template to configure and run</p>
+            </div>
+        `);
+    }
 }
 
 function showNotification(message, type) {
