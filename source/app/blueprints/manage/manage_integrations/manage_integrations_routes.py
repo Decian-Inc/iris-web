@@ -69,11 +69,14 @@ def manage_integrations_index(caseid, url_redir):
 
 @manage_integrations_blueprint.route('/manage/integrations/save', methods=['POST'])
 @login_required
-@ac_requires(Permissions.server_administrator)
-def save_integration_config():
+@ac_requires(Permissions.server_administrator, no_cid_required=True)
+def save_integration_config(caseid, url_redir):
     """
     Save integration configuration
     """
+    if url_redir:
+        return redirect(url_for('manage_integrations.manage_integrations_index', cid=caseid))
+
     try:
         data = request.get_json()
         integration_type = data.get('integration_type')
@@ -327,9 +330,15 @@ def test_sentinelone_connection(config):
             'Content-Type': 'application/json'
         }
 
-        # Test connection using the agents endpoint with minimal data request
-        test_endpoint = f'{base_url}/web/api/v2.1/agents'
-        params = {'limit': 1}  # Minimal request to test connectivity
+        # Test connection using the system status endpoint for authentication validation
+        test_endpoint = f'{base_url}/web/api/v2.1/system/status'
+        params = {}  # No parameters needed for status endpoint
+
+        # Debug logging
+        log.info(f"SentinelOne API Test - URL: {test_endpoint}")
+        log.info(f"SentinelOne API Test - Headers: {headers}")
+        log.info(f"SentinelOne API Test - Params: {params}")
+        log.info(f"SentinelOne API Test - Verify SSL: {verify_ssl}")
 
         start_time = time.time()
 
@@ -342,25 +351,30 @@ def test_sentinelone_connection(config):
             timeout=30
         )
 
+        # Debug response
+        log.info(f"SentinelOne API Test - Response Status: {response.status_code}")
+        log.info(f"SentinelOne API Test - Response Headers: {dict(response.headers)}")
+        if response.status_code != 200:
+            log.info(f"SentinelOne API Test - Response Body: {response.text[:500]}"))
+
         end_time = time.time()
         response_time = int((end_time - start_time) * 1000)  # Convert to milliseconds
 
         if response.status_code == 200:
             response_data = response.json()
 
-            # Extract account information if available
-            account_name = 'SentinelOne Management Console'
-            if 'pagination' in response_data:
-                total_count = response_data.get('pagination', {}).get('totalItems', 0)
-                account_name = f'SentinelOne Console ({total_count} agents)'
+            # Extract system health information
+            health_status = response_data.get('data', {}).get('health', 'Unknown')
+            account_name = f'SentinelOne Management Console (Health: {health_status})'
 
             return {
                 'success': True,
-                'message': 'Connection test successful - SentinelOne API responding',
+                'message': 'Connection test successful - SentinelOne API authentication verified',
                 'account_name': account_name,
                 'response_time': f'{response_time}ms',
                 'api_version': 'v2.1',
-                'status_code': response.status_code
+                'status_code': response.status_code,
+                'health_status': health_status
             }
         elif response.status_code == 401:
             return {
