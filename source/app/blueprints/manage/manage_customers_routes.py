@@ -427,102 +427,137 @@ def delete_contact_route(client_id, contact_id):
 
 def generate_customer_activity_report(client_id):
     """
-    Generate PDF report for customer activity including cases from the past month
+    Generate a professional PDF report for customer activity using Decian Ironclad design.
+    Includes consistent blue/black/white color palette, styled tables, and KPI summary.
     """
-    # Get customer information
+
+    # ─────────────────────────── DATA ───────────────────────────
     customer = get_client_api(client_id)
     if not customer:
         return None
 
-    # Get customer cases with statistics
     cases_data = get_client_cases(client_id)
 
-    # Calculate statistics for the past month
     now = datetime.date.today()
     last_month_start = now - datetime.timedelta(days=30)
-
-    past_month_cases = []
-    for case in cases_data:
-        if case.open_date >= last_month_start:
-            past_month_cases.append(case)
-
-    # Create PDF buffer
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
-    styles = getSampleStyleSheet()
-    story = []
-
-    # Title
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=24,
-        textColor=colors.darkblue,
-        spaceAfter=30,
-        alignment=1  # Center alignment
-    )
-
-    story.append(Paragraph(f"Customer Activity Report", title_style))
-    story.append(Paragraph(f"{customer['customer_name']} (#{customer['customer_id']})", styles['Heading2']))
-    story.append(Spacer(1, 20))
-
-    # Report generation date
-    story.append(Paragraph(f"Report Generated: {now.strftime('%B %d, %Y')}", styles['Normal']))
-    story.append(Paragraph(f"Period: Past 30 days ({last_month_start.strftime('%B %d, %Y')} - {now.strftime('%B %d, %Y')})", styles['Normal']))
-    story.append(Spacer(1, 30))
-
-    # Customer Overview Section
-    story.append(Paragraph("Customer Overview", styles['Heading2']))
-    story.append(Spacer(1, 10))
-
-    customer_info = [
-        ['Customer Name:', customer['customer_name']],
-        ['Customer ID:', f"#{customer['customer_id']}"],
-        ['Description:', customer.get('customer_description', 'N/A')],
-        ['SLA:', customer.get('customer_sla', 'N/A')]
-    ]
-
-    customer_table = Table(customer_info, colWidths=[2*inch, 4*inch])
-    customer_table.setStyle(TableStyle([
-        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-        ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,-1), 10),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-    ]))
-    story.append(customer_table)
-    story.append(Spacer(1, 30))
-
-    # Cases Statistics Section
-    story.append(Paragraph("Cases Summary - Past 30 Days", styles['Heading2']))
-    story.append(Spacer(1, 10))
+    past_month_cases = [c for c in cases_data if c.open_date >= last_month_start]
 
     total_cases = len(cases_data)
     recent_cases = len(past_month_cases)
     open_cases = len([c for c in cases_data if c.close_date is None])
 
-    stats_info = [
-        ['Total Cases (All Time):', str(total_cases)],
-        ['Cases Opened (Past 30 Days):', str(recent_cases)],
-        ['Currently Open Cases:', str(open_cases)],
+    # ─────────────────────────── PDF SETUP ───────────────────────────
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=50, bottomMargin=40)
+
+    styles = getSampleStyleSheet()
+
+    # Custom brand colors
+    DARK_BLUE = colors.HexColor("#0E1F44")
+    LIGHT_BLUE = colors.HexColor("#D9E3F0")
+    BLACK = colors.HexColor("#000000")
+
+    # ─────────────────────────── STYLES ───────────────────────────
+    title_style = ParagraphStyle(
+        "ReportTitle",
+        parent=styles["Heading1"],
+        fontSize=20,
+        textColor=DARK_BLUE,
+        alignment=1,
+        spaceAfter=20
+    )
+
+    section_header = ParagraphStyle(
+        "SectionHeader",
+        parent=styles["Heading2"],
+        fontSize=14,
+        textColor=DARK_BLUE,
+        spaceBefore=10,
+        spaceAfter=10
+    )
+
+    normal = ParagraphStyle(
+        "NormalText",
+        parent=styles["Normal"],
+        fontSize=10,
+        textColor=BLACK,
+        leading=14
+    )
+
+    bold = ParagraphStyle(
+        "BoldText",
+        parent=styles["Normal"],
+        fontSize=10,
+        textColor=BLACK,
+        leading=14
+    )
+    bold.fontName = "Helvetica-Bold"
+
+    # ─────────────────────────── CONTENT ───────────────────────────
+    story = []
+    story.append(Paragraph("Customer Activity Report", title_style))
+    story.append(Spacer(1, 10))
+
+    story.append(Paragraph(f"<b>{customer['customer_name']}</b> (#{customer['customer_id']})", bold))
+    story.append(Spacer(1, 4))
+    story.append(Paragraph(
+        f"Report Generated: {now.strftime('%B %d, %Y')}<br/>"
+        f"Period: Past 30 days ({last_month_start.strftime('%B %d, %Y')} - {now.strftime('%B %d, %Y')})",
+        normal
+    ))
+    story.append(Spacer(1, 20))
+
+    # ─────────────────────────── CUSTOMER OVERVIEW ───────────────────────────
+    story.append(Paragraph("Customer Overview", section_header))
+    overview_data = [
+        ["Customer Name:", customer["customer_name"]],
+        ["Customer ID:", f"#{customer['customer_id']}"],
+        ["Description:", customer.get("customer_description", "N/A")],
+        ["SLA:", customer.get("customer_sla", "N/A")]
     ]
-
-    stats_table = Table(stats_info, colWidths=[3*inch, 2*inch])
-    stats_table.setStyle(TableStyle([
-        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-        ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,-1), 10),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-        ('GRID', (0,0), (-1,-1), 1, colors.lightgrey),
+    overview_table = Table(overview_data, colWidths=[1.5 * inch, 4.5 * inch])
+    overview_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), LIGHT_BLUE),
+        ("TEXTCOLOR", (0, 0), (-1, -1), BLACK),
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
     ]))
-    story.append(stats_table)
-    story.append(Spacer(1, 30))
+    story.append(overview_table)
+    story.append(Spacer(1, 20))
 
-    # Recent Cases Details Section
+    # ─────────────────────────── CASE SUMMARY KPI BLOCKS ───────────────────────────
+    story.append(Paragraph("Cases Summary – Past 30 Days", section_header))
+    kpi_data = [
+        [
+            Paragraph("<b>Total Cases (All Time)</b>", normal),
+            Paragraph("<b>Cases Opened (Past 30 Days)</b>", normal),
+            Paragraph("<b>Currently Open Cases</b>", normal)
+        ],
+        [
+            Paragraph(str(total_cases), bold),
+            Paragraph(str(recent_cases), bold),
+            Paragraph(str(open_cases), bold)
+        ]
+    ]
+    kpi_table = Table(kpi_data, colWidths=[2 * inch, 2 * inch, 2 * inch])
+    kpi_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), LIGHT_BLUE),
+        ("TEXTCOLOR", (0, 0), (-1, -1), BLACK),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+    ]))
+    story.append(kpi_table)
+    story.append(Spacer(1, 20))
+
+    # ─────────────────────────── RECENT CASES TABLE ───────────────────────────
     if past_month_cases:
-        story.append(Paragraph("Cases Opened in Past 30 Days", styles['Heading2']))
-        story.append(Spacer(1, 10))
-
-        case_data = [['Case Name', 'Open Date', 'Case ID', 'Owner']]
+        story.append(Paragraph("Cases Opened in Past 30 Days", section_header))
+        case_data = [["Case Name", "Open Date", "Case ID", "Owner"]]
 
         for case in past_month_cases:
             case_data.append([
@@ -532,30 +567,33 @@ def generate_customer_activity_report(client_id):
                 case.case_owner
             ])
 
-        case_table = Table(case_data, colWidths=[3*inch, 1.2*inch, 1*inch, 1*inch])
+        case_table = Table(case_data, colWidths=[3 * inch, 1.2 * inch, 1 * inch, 1.3 * inch])
         case_table.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.lightblue),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0,0), (-1,-1), 9),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-            ('GRID', (0,0), (-1,-1), 1, colors.black),
-            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ("BACKGROUND", (0, 0), (-1, 0), DARK_BLUE),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("TEXTCOLOR", (0, 1), (-1, -1), BLACK),
+            ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
         ]))
         story.append(case_table)
     else:
-        story.append(Paragraph("No cases opened in the past 30 days.", styles['Normal']))
-
+        story.append(Paragraph("No cases opened in the past 30 days.", normal))
     story.append(Spacer(1, 30))
 
-    # Footer
-    story.append(Paragraph(
-        "This report was generated automatically by Ironclad Case Management System.",
-        styles['Normal']
-    ))
+    # ─────────────────────────── FOOTER ───────────────────────────
+    footer_text = Paragraph(
+        '<para align="center">'
+        '<font size="9" color="#0E1F44">'
+        'This report was generated automatically by Decian Ironclad Case Management System.'
+        '</font></para>',
+        styles["Normal"]
+    )
+    story.append(footer_text)
 
-    # Build PDF
+    # ─────────────────────────── BUILD PDF ───────────────────────────
     doc.build(story)
     buffer.seek(0)
     return buffer
