@@ -89,7 +89,7 @@ def save_integration_config(caseid, url_redir):
         success = save_integrations_config(integration_type, config)
 
         if success:
-            track_activity(f"Integration {integration_type} configuration updated", ctx_case=None)
+            track_activity(f"Integration {integration_type} configuration updated", caseid=None)
             return response_success("Integration configuration saved successfully")
         else:
             return response_error("Failed to save integration configuration")
