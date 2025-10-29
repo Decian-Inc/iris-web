@@ -355,7 +355,7 @@ def test_sentinelone_connection(config):
         log.info(f"SentinelOne API Test - Response Status: {response.status_code}")
         log.info(f"SentinelOne API Test - Response Headers: {dict(response.headers)}")
         if response.status_code != 200:
-            log.info(f"SentinelOne API Test - Response Body: {response.text[:500]}"))
+            log.info(f"SentinelOne API Test - Response Body: {response.text[:500]}")
 
         end_time = time.time()
         response_time = int((end_time - start_time) * 1000)  # Convert to milliseconds
