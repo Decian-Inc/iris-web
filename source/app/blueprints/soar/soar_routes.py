@@ -142,17 +142,6 @@ def soar_templates_list():
                 "created_at": "2025-10-13T00:00:00Z"
             },
             {
-                "id": "sentinel1-fetch-logs",
-                "name": "SentinelOne Fetch Endpoint Logs",
-                "description": "Collect endpoint logs for evidence gathering",
-                "vendor": "SentinelOne",
-                "tags": ["forensics", "logs"],
-                "requires_approval": False,
-                "allowed_target_types": ["agent_id", "hostname"],
-                "created_by": "system",
-                "created_at": "2025-10-13T00:00:00Z"
-            },
-            {
                 "id": "sentinel1-full-scan",
                 "name": "SentinelOne Full Disk Scan",
                 "description": "Initiate a complete disk scan on the endpoint",
@@ -1761,8 +1750,6 @@ def execute_soar_job(job_id, template_id, target, case_id, integrations_config):
             result = execute_sentinelone_quarantine(job_id, target, config, case_id)
         elif template_id == 'sentinel1-fetch-apps':
             result = execute_sentinelone_fetch_apps(job_id, target, config, case_id)
-        elif template_id == 'sentinel1-fetch-logs':
-            result = execute_sentinelone_fetch_logs(job_id, target, config, case_id)
         elif template_id == 'sentinel1-full-scan':
             result = execute_sentinelone_full_scan(job_id, target, config, case_id)
         elif template_id == 'velociraptor-collect':
@@ -1821,7 +1808,6 @@ def get_template_name(template_id):
     template_names = {
         'sentinel1-quarantine': 'SentinelOne Network Quarantine',
         'sentinel1-fetch-apps': 'SentinelOne Fetch Installed Applications',
-        'sentinel1-fetch-logs': 'SentinelOne Fetch Endpoint Logs',
         'sentinel1-full-scan': 'SentinelOne Full Disk Scan',
         'velociraptor-collect': 'Velociraptor Forensic Collection',
         'crowdstrike-contain-host': 'CrowdStrike Contain Host',
@@ -2184,7 +2170,6 @@ def get_template_data():
     return [
         {"id": "sentinel1-quarantine", "name": "SentinelOne Network Quarantine", "requires_approval": True},
         {"id": "sentinel1-fetch-apps", "name": "SentinelOne Fetch Installed Applications", "requires_approval": False},
-        {"id": "sentinel1-fetch-logs", "name": "SentinelOne Fetch Endpoint Logs", "requires_approval": False},
         {"id": "sentinel1-full-scan", "name": "SentinelOne Full Disk Scan", "requires_approval": True},
         {"id": "velociraptor-collect", "name": "Velociraptor Forensic Collection", "requires_approval": True},
         {"id": "crowdstrike-contain-host", "name": "CrowdStrike Contain Host", "requires_approval": True},
@@ -2843,182 +2828,6 @@ def execute_velociraptor_collect(job_id, target, config):
             "error": str(e)
         }
 
-
-def execute_sentinelone_fetch_logs(job_id, target, config, case_id):
-    """
-    Execute SentinelOne fetch endpoint logs playbook
-    """
-    try:
-        print(f"DEBUG: execute_sentinelone_fetch_logs started for job_id={job_id}, target={target}")
-
-        base_url = config.get('base_url').rstrip('/')
-        api_token = config.get('api_token')
-        verify_ssl = config.get('verify_ssl', True)
-        start_time = datetime.now().isoformat() + "Z"
-
-        print(f"DEBUG: SentinelOne config - base_url={base_url}, verify_ssl={verify_ssl}")
-
-        headers = {
-            'Authorization': f'ApiToken {api_token}',
-            'Content-Type': 'application/json'
-        }
-
-        # Step 1: Find agent by hostname or agent ID
-        print(f"DEBUG: Step 1 - Finding agent for target: {target}")
-
-        if target.startswith('agent-'):
-            agent_id = target.replace('agent-', '')
-            print(f"DEBUG: Using direct agent ID: {agent_id}")
-        else:
-            # Search by hostname
-            agents_endpoint = f'{base_url}/web/api/v2.1/agents'
-            params = {'computerName': target, 'limit': 1}
-
-            print(f"DEBUG: Searching for agent at {agents_endpoint} with params {params}")
-
-            response = requests.get(agents_endpoint, headers=headers, params=params, verify=verify_ssl, timeout=30)
-            print(f"DEBUG: Agent search response status: {response.status_code}")
-
-            if response.status_code != 200:
-                print(f"DEBUG: Agent search failed with status {response.status_code}: {response.text}")
-                return {
-                    "job_id": job_id,
-                    "status": "Failed",
-                    "message": f"Failed to find agent: {target}",
-                    "error": f"SentinelOne API returned status {response.status_code}"
-                }
-
-            agents = response.json().get('data', [])
-            print(f"DEBUG: Found {len(agents)} agents")
-
-            if not agents:
-                print(f"DEBUG: No agents found for hostname {target}")
-                return {
-                    "job_id": job_id,
-                    "status": "Failed",
-                    "message": f"Agent not found: {target}",
-                    "error": "No agents found matching the target hostname"
-                }
-
-            agent_id = agents[0]['id']
-            print(f"DEBUG: Found agent ID: {agent_id}")
-
-        # Step 2: Initiate log fetch
-        print(f"DEBUG: Step 2 - Initiating log fetch for agent ID: {agent_id}")
-
-        logs_endpoint = f'{base_url}/web/api/v2.1/agents/actions/fetch-logs'
-        logs_data = {
-            'filter': {
-                'ids': [agent_id]
-            },
-            'data': {
-                'agentLogs': True,
-                'customerFacingLogs': False,
-                'platformLogs': False
-            }
-        }
-
-        print(f"DEBUG: Posting to {logs_endpoint} with data: {logs_data}")
-
-        response = requests.post(logs_endpoint, headers=headers, json=logs_data, verify=verify_ssl, timeout=30)
-        print(f"DEBUG: Log fetch response status: {response.status_code}")
-
-        if response.status_code == 200:
-            fetch_response = response.json()
-            activity_id = fetch_response.get('data', {}).get('activityId')
-
-            # Poll for completion (simplified - in real implementation would poll properly)
-            time.sleep(2)  # Wait a moment for processing
-
-            # Step 3: Check status and get download URL
-            status_endpoint = f'{base_url}/web/api/v2.1/activities/{activity_id}'
-            status_response = requests.get(status_endpoint, headers=headers, verify=verify_ssl, timeout=30)
-
-            end_time = datetime.now().isoformat() + "Z"
-
-            # Save log fetch details as artifact
-            artifact_filename = f"logs_{target}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-            logs_data = {
-                "job_id": job_id,
-                "action": "fetch_endpoint_logs",
-                "target": target,
-                "agent_id": agent_id,
-                "timestamp": end_time,
-                "activity_id": activity_id,
-                "status": "completed",
-                "fetch_response": fetch_response
-            }
-
-            artifact_path = save_case_artifact(case_id, artifact_filename, logs_data)
-
-            # Create case note
-            note_content = f"""**SOAR Action:** Fetch Endpoint Logs
-**Endpoint:** {target}
-**Timestamp:** {end_time}
-**Status:** ✅ Completed
-**Log Fetch Activity:** {activity_id}
-
-_Logs collected for forensic review._
-
-**Artifact:** `/cases/{case_id}/artifacts/sentinelone/{artifact_filename}`"""
-
-            add_case_note(case_id, note_content)
-
-            return {
-                "job_id": job_id,
-                "status": "Completed",
-                "message": f"Successfully initiated log fetch for {target}",
-                "template_name": "SentinelOne Fetch Endpoint Logs",
-                "target": target,
-                "start_time": start_time,
-                "end_time": end_time,
-                "activity_id": activity_id,
-                "artifact_path": artifact_path,
-                "steps": [
-                    {
-                        "step_id": "find_agent",
-                        "name": "Find Agent",
-                        "status": "Completed",
-                        "message": f"Found agent ID: {agent_id}"
-                    },
-                    {
-                        "step_id": "initiate_fetch",
-                        "name": "Initiate Log Fetch",
-                        "status": "Completed",
-                        "message": f"Log fetch started with activity ID: {activity_id}"
-                    },
-                    {
-                        "step_id": "save_artifact",
-                        "name": "Save Artifact",
-                        "status": "Completed",
-                        "message": f"Saved log fetch details to {artifact_filename}"
-                    }
-                ]
-            }
-        else:
-            return {
-                "job_id": job_id,
-                "status": "Failed",
-                "message": f"Failed to fetch logs from agent: {target}",
-                "error": f"SentinelOne API returned status {response.status_code}: {response.text}"
-            }
-
-    except requests.exceptions.RequestException as e:
-        return {
-            "job_id": job_id,
-            "status": "Failed",
-            "message": f"Connection error to SentinelOne: {str(e)}",
-            "error": "Check integration settings and network connectivity"
-        }
-    except Exception as e:
-        print(f"DEBUG: Exception in execute_sentinelone_fetch_logs: {str(e)}")
-        traceback.print_exc()
-        return {
-            "job_id": job_id,
-            "status": "Failed",
-            "message": f"SentinelOne fetch logs job failed: {str(e)}",
-            "error": str(e)
-        }
 
 
 def execute_sentinelone_full_scan(job_id, target, config, case_id):
