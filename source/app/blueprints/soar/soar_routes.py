@@ -2912,7 +2912,9 @@ def execute_sentinelone_fetch_logs(job_id, target, config, case_id):
                 'ids': [agent_id]
             },
             'data': {
-                'logTypes': ['agent', 'security']
+                'agentLogs': True,
+                'customerFacingLogs': False,
+                'platformLogs': False
             }
         }
 
