@@ -2570,7 +2570,7 @@ def execute_sentinelone_fetch_apps(job_id, target, config, case_id):
             step_order=2,
             status="Running"
         )
-        apps_endpoint = f'{base_url}/web/api/v2.1/agents/{agent_id}/installed-applications'
+        apps_endpoint = f'{base_url}/web/api/v2.1/agents/applications?ids={agent_id}'
         response = requests.get(apps_endpoint, headers=headers, verify=verify_ssl, timeout=30)
 
         if response.status_code == 200:
