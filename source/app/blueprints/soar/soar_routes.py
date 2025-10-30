@@ -1887,15 +1887,36 @@ def add_case_note(case_id, note_content, note_title="SOAR Job Execution"):
     Add a note to the case using the IRIS notes system
     """
     try:
-        # Create note data in the format expected by IRIS notes business logic
-        note_data = {
-            'note_title': note_title,
-            'note_content': note_content,
-            'directory_id': None  # Default directory
-        }
+        # Import required modules for note creation
+        from app.datamgmt.case.case_notes_db import add_note
+        from app.models import NoteDirectory
+        from app import db
+        from sqlalchemy import and_
 
-        # Use IRIS notes business logic to create the note
-        note = notes_business.create(note_data, case_id)
+        # Check if "SOAR Job Reports" directory exists, create if not
+        directory = NoteDirectory.query.filter(and_(
+            NoteDirectory.case_id == case_id,
+            NoteDirectory.name == "SOAR Job Reports"
+        )).first()
+
+        if not directory:
+            directory = NoteDirectory(
+                name="SOAR Job Reports",
+                case_id=case_id
+            )
+            db.session.add(directory)
+            db.session.commit()
+            print(f"Created SOAR Job Reports directory for case {case_id}")
+
+        # Add the note using the core IRIS function
+        note = add_note(
+            note_title=note_title,
+            creation_date=datetime.now(),
+            user_id=1,  # System user
+            caseid=case_id,
+            directory_id=directory.id,
+            note_content=note_content
+        )
 
         return note.note_id if note else None
     except Exception as e:
