@@ -2640,14 +2640,11 @@ def execute_sentinelone_fetch_apps(job_id, target, config, case_id):
 
             # Create formatted app list for case note
             app_list = []
-            for i, app in enumerate(installed_apps[:20], 1):  # Limit to first 20 for note
+            for i, app in enumerate(installed_apps, 1):  # Show all applications
                 name = app.get('name', 'Unknown')
                 version = app.get('version', 'Unknown')
                 publisher = app.get('publisher', 'Unknown')
                 app_list.append(f"{i}. {name} {version} ({publisher})")
-
-            if len(installed_apps) > 20:
-                app_list.append(f"... and {len(installed_apps) - 20} more applications")
 
             # Create case note
             note_content = f"""**SOAR Action:** Fetch Installed Apps
