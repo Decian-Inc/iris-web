@@ -2849,10 +2849,14 @@ def execute_sentinelone_fetch_logs(job_id, target, config, case_id):
     Execute SentinelOne fetch endpoint logs playbook
     """
     try:
+        print(f"DEBUG: execute_sentinelone_fetch_logs started for job_id={job_id}, target={target}")
+
         base_url = config.get('base_url').rstrip('/')
         api_token = config.get('api_token')
         verify_ssl = config.get('verify_ssl', True)
         start_time = datetime.now().isoformat() + "Z"
+
+        print(f"DEBUG: SentinelOne config - base_url={base_url}, verify_ssl={verify_ssl}")
 
         headers = {
             'Authorization': f'ApiToken {api_token}',
@@ -2860,15 +2864,23 @@ def execute_sentinelone_fetch_logs(job_id, target, config, case_id):
         }
 
         # Step 1: Find agent by hostname or agent ID
+        print(f"DEBUG: Step 1 - Finding agent for target: {target}")
+
         if target.startswith('agent-'):
             agent_id = target.replace('agent-', '')
+            print(f"DEBUG: Using direct agent ID: {agent_id}")
         else:
             # Search by hostname
             agents_endpoint = f'{base_url}/web/api/v2.1/agents'
             params = {'computerName': target, 'limit': 1}
 
+            print(f"DEBUG: Searching for agent at {agents_endpoint} with params {params}")
+
             response = requests.get(agents_endpoint, headers=headers, params=params, verify=verify_ssl, timeout=30)
+            print(f"DEBUG: Agent search response status: {response.status_code}")
+
             if response.status_code != 200:
+                print(f"DEBUG: Agent search failed with status {response.status_code}: {response.text}")
                 return {
                     "job_id": job_id,
                     "status": "Failed",
@@ -2877,7 +2889,10 @@ def execute_sentinelone_fetch_logs(job_id, target, config, case_id):
                 }
 
             agents = response.json().get('data', [])
+            print(f"DEBUG: Found {len(agents)} agents")
+
             if not agents:
+                print(f"DEBUG: No agents found for hostname {target}")
                 return {
                     "job_id": job_id,
                     "status": "Failed",
@@ -2886,8 +2901,11 @@ def execute_sentinelone_fetch_logs(job_id, target, config, case_id):
                 }
 
             agent_id = agents[0]['id']
+            print(f"DEBUG: Found agent ID: {agent_id}")
 
         # Step 2: Initiate log fetch
+        print(f"DEBUG: Step 2 - Initiating log fetch for agent ID: {agent_id}")
+
         logs_endpoint = f'{base_url}/web/api/v2.1/agents/actions/fetch-logs'
         logs_data = {
             'filter': {
@@ -2898,7 +2916,10 @@ def execute_sentinelone_fetch_logs(job_id, target, config, case_id):
             }
         }
 
+        print(f"DEBUG: Posting to {logs_endpoint} with data: {logs_data}")
+
         response = requests.post(logs_endpoint, headers=headers, json=logs_data, verify=verify_ssl, timeout=30)
+        print(f"DEBUG: Log fetch response status: {response.status_code}")
 
         if response.status_code == 200:
             fetch_response = response.json()
@@ -2988,6 +3009,8 @@ _Logs collected for forensic review._
             "error": "Check integration settings and network connectivity"
         }
     except Exception as e:
+        print(f"DEBUG: Exception in execute_sentinelone_fetch_logs: {str(e)}")
+        traceback.print_exc()
         return {
             "job_id": job_id,
             "status": "Failed",
