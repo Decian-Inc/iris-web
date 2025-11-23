@@ -131,6 +131,26 @@ function refresh_client_cases(customer_id) {
 
 }
 
+function generateCustomerReport(customer_id) {
+    // Show loading notification
+    notify_success("Generating report... Please wait.");
+
+    // Create a temporary link to download the PDF
+    const downloadUrl = `/manage/customers/${customer_id}/report/download`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `customer_${customer_id}_activity_report.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function previewCustomerReport(customer_id) {
+    // Open report in new tab for preview
+    const previewUrl = `/manage/customers/${customer_id}/report/preview`;
+    window.open(previewUrl, '_blank');
+}
+
 $(document).ready(function() {
 
     let customer_id = $('#customer_id').val();

@@ -16,8 +16,8 @@ source/app/config.test.ini
 libesedb-*/
 orcparser/
 venv1/
-.DS_Store
 .env*
+.DS_Store
 .venv/
 .vscode/
 *.code-workspace

@@ -110,7 +110,6 @@ source/app/
 - **Integration Executors**:
   - `execute_sentinelone_quarantine()`
   - `execute_sentinelone_fetch_apps()`
-  - `execute_sentinelone_fetch_logs()`
   - `execute_sentinelone_full_scan()`
   - `execute_velociraptor_collect()`
 

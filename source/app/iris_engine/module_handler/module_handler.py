@@ -475,6 +475,11 @@ def task_hook_wrapper(self, module_name, hook_name, hook_ui_name, data, init_use
         mod_inst, _ = instantiate_module_from_name(module_name=module_name)
 
         if mod_inst:
+            # Ensure case ID is properly set on module instance
+            if caseid:
+                mod_inst.case_id = caseid
+                log.info(f'Set case_id {caseid} on module {module_name} for hook {hook_name}')
+
             task_status = mod_inst.hooks_handler(hook_name, hook_ui_name, data=_obj)
 
             # Recommit the changes made by the module

@@ -10,16 +10,17 @@
 {% endblock stylesheets %}
 
 {% block content %}
-    <body class="login">
-    <div class="login__wrapper row">
-        <div class="login__left_part col-xs-12 col-md-8">
-            <div class="login__logo">
-                <h1 class="text-white" style="font-size: 3rem; font-weight: bold;">Ironclad</h1>
+<body class="login">
+    <div class="container-fluid h-100">
+        <div class="login__wrapper row h-100">
+            <div class="login__left_part col-xs-12 col-md-8">
+                <div class="login__logo">
+                    <h1 class="text-white" style="font-size: 3rem; font-weight: bold;">Ironclad Case Management</h1>
+                </div>
+                <h3 class="text-white">{{ organisation_name }}</h3>
+                <span class="text-white text-center mt-4">{{ login_banner|replace('\n', '<br>')|safe }}</span>
             </div>
-            <h3 class="text-white">{{ organisation_name }}</h3>
-            <span class="text-white text-center mt-4">{{ login_banner|replace('\n', '<br>')|safe }}</span>
-        </div>
-        <div class="login__right_part col-xs-12 col-md-4">
+            <div class="login__right_part col-xs-12 col-md-4">
             <h3 class="login__form_title">Sign In</h3>
 
             <form method="post" action="" class="login__form">
@@ -57,6 +58,7 @@
                 {% endif %}
             </div>
         </div>
+    </div>
     </div>
 
     <script>

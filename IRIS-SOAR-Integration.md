@@ -110,15 +110,6 @@ Below is a suggested JSON schema for storing Job Templates in IRIS.
     },
     {
       "id":"step2",
-      "name":"Fetch S1 Logs",
-      "type":"api_call",
-      "vendor":"sentinelone",
-      "operation":"agents.actions.fetch-logs",
-      "payload":"{ \"filter\":{ \"ids\":[\"{{agent_id}}\"] }, \"logTypes\": [\"agent\",\"threat\"] }",
-      "outputs":[{"name":"log_job_id","path":"$.job_id"}]
-    },
-    {
-      "id":"step3",
       "name":"Velociraptor Collect",
       "type":"api_call",
       "vendor":"velociraptor",
@@ -128,8 +119,7 @@ Below is a suggested JSON schema for storing Job Templates in IRIS.
     }
   ],
   "artifacts": [
-    {"name":"s1_logs","type":"json","source_step":"step2","path":"$.results"},
-    {"name":"vr_memdump","type":"file","source_step":"step3","path":"$.download_links[0]"}
+    {"name":"vr_memdump","type":"file","source_step":"step2","path":"$.download_links[0]"}
   ],
   "storage_policy":{
     "store_in_case":true,

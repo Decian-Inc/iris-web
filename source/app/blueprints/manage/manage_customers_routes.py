@@ -24,9 +24,17 @@ from flask import redirect
 from flask import render_template
 from flask import request
 from flask import url_for
+from flask import send_file
+from flask import make_response
 from flask_login import current_user
 from flask_wtf import FlaskForm
 from marshmallow import ValidationError
+from io import BytesIO
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
 
 from app import ac_current_user_has_permission
 from app.datamgmt.client.client_db import create_client
@@ -415,3 +423,235 @@ def delete_contact_route(client_id, contact_id):
     track_activity(f"Deleted Customer with ID {contact_id}", ctx_less=True)
 
     return response_success("Deleted successfully")
+
+
+def generate_customer_activity_report(client_id):
+    """
+    Generate a professional PDF report for customer activity using Decian Ironclad design.
+    Includes consistent blue/black/white color palette, styled tables, and KPI summary.
+    """
+
+    # ─────────────────────────── DATA ───────────────────────────
+    customer = get_client_api(client_id)
+    if not customer:
+        return None
+
+    cases_data = get_client_cases(client_id)
+
+    now = datetime.date.today()
+    last_month_start = now - datetime.timedelta(days=30)
+    past_month_cases = [c for c in cases_data if c.open_date >= last_month_start]
+
+    total_cases = len(cases_data)
+    recent_cases = len(past_month_cases)
+    open_cases = len([c for c in cases_data if c.close_date is None])
+
+    # ─────────────────────────── PDF SETUP ───────────────────────────
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=50, bottomMargin=40)
+
+    styles = getSampleStyleSheet()
+
+    # Custom brand colors
+    DARK_BLUE = colors.HexColor("#0E1F44")
+    LIGHT_BLUE = colors.HexColor("#D9E3F0")
+    BLACK = colors.HexColor("#000000")
+
+    # ─────────────────────────── STYLES ───────────────────────────
+    title_style = ParagraphStyle(
+        "ReportTitle",
+        parent=styles["Heading1"],
+        fontSize=20,
+        textColor=DARK_BLUE,
+        alignment=1,
+        spaceAfter=20
+    )
+
+    section_header = ParagraphStyle(
+        "SectionHeader",
+        parent=styles["Heading2"],
+        fontSize=14,
+        textColor=DARK_BLUE,
+        spaceBefore=10,
+        spaceAfter=10
+    )
+
+    normal = ParagraphStyle(
+        "NormalText",
+        parent=styles["Normal"],
+        fontSize=10,
+        textColor=BLACK,
+        leading=14
+    )
+
+    bold = ParagraphStyle(
+        "BoldText",
+        parent=styles["Normal"],
+        fontSize=10,
+        textColor=BLACK,
+        leading=14
+    )
+    bold.fontName = "Helvetica-Bold"
+
+    # ─────────────────────────── CONTENT ───────────────────────────
+    story = []
+    story.append(Paragraph("Customer Activity Report", title_style))
+    story.append(Spacer(1, 10))
+
+    story.append(Paragraph(f"<b>{customer['customer_name']}</b> (#{customer['customer_id']})", bold))
+    story.append(Spacer(1, 4))
+    story.append(Paragraph(
+        f"Report Generated: {now.strftime('%B %d, %Y')}<br/>"
+        f"Period: Past 30 days ({last_month_start.strftime('%B %d, %Y')} - {now.strftime('%B %d, %Y')})",
+        normal
+    ))
+    story.append(Spacer(1, 20))
+
+    # ─────────────────────────── CUSTOMER OVERVIEW ───────────────────────────
+    story.append(Paragraph("Customer Overview", section_header))
+    overview_data = [
+        ["Customer Name:", customer["customer_name"]],
+        ["Customer ID:", f"#{customer['customer_id']}"],
+        ["Description:", customer.get("customer_description", "N/A")],
+        ["SLA:", customer.get("customer_sla", "N/A")]
+    ]
+    overview_table = Table(overview_data, colWidths=[1.5 * inch, 4.5 * inch])
+    overview_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), LIGHT_BLUE),
+        ("TEXTCOLOR", (0, 0), (-1, -1), BLACK),
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    story.append(overview_table)
+    story.append(Spacer(1, 20))
+
+    # ─────────────────────────── CASE SUMMARY KPI BLOCKS ───────────────────────────
+    story.append(Paragraph("Cases Summary – Past 30 Days", section_header))
+    kpi_data = [
+        [
+            Paragraph("<b>Total Cases (All Time)</b>", normal),
+            Paragraph("<b>Cases Opened (Past 30 Days)</b>", normal),
+            Paragraph("<b>Currently Open Cases</b>", normal)
+        ],
+        [
+            Paragraph(str(total_cases), bold),
+            Paragraph(str(recent_cases), bold),
+            Paragraph(str(open_cases), bold)
+        ]
+    ]
+    kpi_table = Table(kpi_data, colWidths=[2 * inch, 2 * inch, 2 * inch])
+    kpi_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), LIGHT_BLUE),
+        ("TEXTCOLOR", (0, 0), (-1, -1), BLACK),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+    ]))
+    story.append(kpi_table)
+    story.append(Spacer(1, 20))
+
+    # ─────────────────────────── RECENT CASES TABLE ───────────────────────────
+    if past_month_cases:
+        story.append(Paragraph("Cases Opened in Past 30 Days", section_header))
+        case_data = [["Case Name", "Open Date", "Case ID", "Owner"]]
+
+        for case in past_month_cases:
+            case_data.append([
+                case.case_name,
+                case.open_date.strftime('%Y-%m-%d'),
+                f"#{case.case_id}",
+                case.case_owner
+            ])
+
+        case_table = Table(case_data, colWidths=[3 * inch, 1.2 * inch, 1 * inch, 1.3 * inch])
+        case_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), DARK_BLUE),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("TEXTCOLOR", (0, 1), (-1, -1), BLACK),
+            ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ]))
+        story.append(case_table)
+    else:
+        story.append(Paragraph("No cases opened in the past 30 days.", normal))
+    story.append(Spacer(1, 30))
+
+    # ─────────────────────────── FOOTER ───────────────────────────
+    footer_text = Paragraph(
+        '<para align="center">'
+        '<font size="9" color="#0E1F44">'
+        'This report was generated automatically by Decian Ironclad Case Management System.'
+        '</font></para>',
+        styles["Normal"]
+    )
+    story.append(footer_text)
+
+    # ─────────────────────────── BUILD PDF ───────────────────────────
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
+
+@manage_customers_blueprint.route('/manage/customers/<int:client_id>/report/download', methods=['GET'])
+@ac_requires(Permissions.customers_read, no_cid_required=True)
+@ac_requires_client_access()
+def download_customer_report(client_id, caseid, url_redir):
+    """Download customer activity report as PDF"""
+    if url_redir:
+        return redirect(url_for('manage_customers.manage_customers', cid=caseid))
+
+    try:
+        pdf_buffer = generate_customer_activity_report(client_id)
+        if not pdf_buffer:
+            return response_error("Could not generate report - customer not found")
+
+        customer = get_client_api(client_id)
+        filename = f"customer_{client_id}_{customer['customer_name'].replace(' ', '_')}_activity_report.pdf"
+
+        track_activity(f"Downloaded customer activity report for {customer['customer_name']}", ctx_less=True)
+
+        return send_file(
+            pdf_buffer,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+
+    except Exception as e:
+        print(traceback.format_exc())
+        return response_error(f"Error generating report: {str(e)}")
+
+
+@manage_customers_blueprint.route('/manage/customers/<int:client_id>/report/preview', methods=['GET'])
+@ac_requires(Permissions.customers_read, no_cid_required=True)
+@ac_requires_client_access()
+def preview_customer_report(client_id, caseid, url_redir):
+    """Preview customer activity report in browser"""
+    if url_redir:
+        return redirect(url_for('manage_customers.manage_customers', cid=caseid))
+
+    try:
+        pdf_buffer = generate_customer_activity_report(client_id)
+        if not pdf_buffer:
+            return response_error("Could not generate report - customer not found")
+
+        customer = get_client_api(client_id)
+        filename = f"customer_{client_id}_{customer['customer_name'].replace(' ', '_')}_activity_report.pdf"
+
+        track_activity(f"Previewed customer activity report for {customer['customer_name']}", ctx_less=True)
+
+        response = make_response(pdf_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'inline; filename="{filename}"'
+        return response
+
+    except Exception as e:
+        print(traceback.format_exc())
+        return response_error(f"Error generating report: {str(e)}")

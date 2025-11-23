@@ -17,6 +17,7 @@
 #  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import json
+import logging as log
 import os
 import pickle
 from flask import Blueprint
@@ -37,6 +38,7 @@ from app.models import CasesEvent
 from app.models import CeleryTaskMeta
 from app.models import GlobalTasks
 from app.models import Ioc
+from app.models import IocLink
 from app.models import IrisHook
 from app.models import IrisModule
 from app.models import IrisModuleHook
@@ -131,7 +133,12 @@ def dim_hooks_call(caseid):
             return response_error('Invalid target')
 
         if data_type == 'ioc':
-            obj = Ioc.query.filter(Ioc.ioc_id == target).first()
+            obj = Ioc.query.join(
+                IocLink, IocLink.ioc_id == Ioc.ioc_id
+            ).filter(
+                Ioc.ioc_id == target,
+                IocLink.case_id == caseid
+            ).first()
 
         elif data_type == "case":
             obj = Cases.query.filter(Cases.case_id == caseid).first()
@@ -189,6 +196,10 @@ def dim_hooks_call(caseid):
         index += 1
 
     if len(obj_targets) > 0:
+        # Ensure we have a valid case ID before calling modules
+        if not caseid:
+            log.warning(f"No case ID available for hook {hook_name}. This may cause issues with note creation.")
+
         call_modules_hook(hook_name=hook_name, hook_ui_name=hook_ui_name, data=obj_targets,
                           caseid=caseid, module_name=module_name)
 
