@@ -321,7 +321,12 @@ function open_exception_modal() {
     $('#exception_duration_hours').val(168);
     $('#exception_reason').val('');
     $('#exception_created_by').val($('#current_user_login').text().trim());
-    $('#exception_match_context_info').hide();
+    $('#exception_match_context_panel').hide();
+
+    $('#ctx_rule_id, #ctx_rule_description, #ctx_triggering_agent').text('');
+    $('#ctx_alert_set, #ctx_case_definition').text('');
+    $('#ctx_mitre_ids, #ctx_mitre_tactics, #ctx_mitre_techniques').text('');
+    $('#ctx_triggered_rule_ids').text('');
 
     get_request_api('/case/meta')
     .done(function(data) {
@@ -334,12 +339,26 @@ function open_exception_modal() {
             }
 
             if (matchCtx) {
-                $('#exception_match_context_info').show();
+                $('#exception_match_context_panel').show();
+
+                $('#ctx_rule_id').text(matchCtx.rule_id || '—');
+                $('#ctx_rule_description').text(matchCtx.rule_description || '');
+                $('#ctx_triggering_agent').text(matchCtx.triggering_agent || '—');
+                $('#ctx_alert_set').text(matchCtx.alert_set || '—');
+                $('#ctx_case_definition').text(matchCtx.case_definition || '—');
+                $('#ctx_mitre_ids').text(matchCtx.mitre_ids || '—');
+                $('#ctx_mitre_tactics').text(matchCtx.mitre_tactics || '—');
+                $('#ctx_mitre_techniques').text(matchCtx.mitre_techniques || '—');
+
+                var ruleIds = matchCtx.triggered_rule_ids || [];
+                $('#ctx_triggered_rule_ids').text(ruleIds.length > 0 ? ruleIds.join(', ') : '—');
 
                 if (matchCtx.tenant_key) {
                     $('#exception_tenant_key').val(matchCtx.tenant_key);
                 }
-                if (matchCtx.rule_id) {
+                if (ruleIds.length > 0) {
+                    $('#exception_rule_id').val(ruleIds.join(', '));
+                } else if (matchCtx.rule_id) {
                     $('#exception_rule_id').val(matchCtx.rule_id);
                 }
                 if (matchCtx.triggering_agent) {
@@ -382,7 +401,8 @@ function submit_exception() {
 
     var criteria = {};
     if (ruleId) {
-        criteria.rule_id = ruleId;
+        var ruleIdParts = ruleId.split(',').map(function(r) { return r.trim(); }).filter(function(r) { return r !== ''; });
+        criteria.rule_id = ruleIdParts.length === 1 ? ruleIdParts[0] : ruleIdParts;
     }
     if (agentName) {
         criteria.agent_name = agentName;

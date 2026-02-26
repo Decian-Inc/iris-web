@@ -303,8 +303,46 @@
                                 </button>
                             </div>
                             <div class="modal-body">
-                                <div class="alert alert-info" role="alert" id="exception_match_context_info" style="display:none;">
-                                    <i class="fa-solid fa-circle-info mr-1"></i> Fields pre-populated from case match context.
+                                <div id="exception_match_context_panel" style="display:none;" class="mb-3">
+                                    <div class="alert alert-info mb-2" role="alert">
+                                        <i class="fa-solid fa-circle-info mr-1"></i> Fields pre-populated from case match context.
+                                    </div>
+                                    <div class="card bg-light mb-3">
+                                        <div class="card-body py-2 px-3" style="font-size: 0.875rem;">
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <strong>Rule:</strong> <span id="ctx_rule_id"></span> &mdash; <span id="ctx_rule_description" class="text-muted"></span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <strong>Agent:</strong> <span id="ctx_triggering_agent"></span>
+                                                </div>
+                                            </div>
+                                            <div class="row mt-1">
+                                                <div class="col-6">
+                                                    <strong>Alert Set:</strong> <span id="ctx_alert_set"></span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <strong>Case Definition:</strong> <span id="ctx_case_definition"></span>
+                                                </div>
+                                            </div>
+                                            <div class="row mt-1">
+                                                <div class="col-6">
+                                                    <strong>MITRE IDs:</strong> <span id="ctx_mitre_ids"></span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <strong>MITRE Tactics:</strong> <span id="ctx_mitre_tactics"></span>
+                                                </div>
+                                            </div>
+                                            <div class="row mt-1">
+                                                <div class="col-6">
+                                                    <strong>MITRE Techniques:</strong> <span id="ctx_mitre_techniques"></span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <strong>All Triggered Rule IDs:</strong> <span id="ctx_triggered_rule_ids"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="row mb-3">
                                     <div class="col-12">
