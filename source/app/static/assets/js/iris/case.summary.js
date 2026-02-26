@@ -313,6 +313,48 @@ function manage_case(case_id) {
 }
 
 
+function parse_description_match_context(description) {
+    if (!description) return null;
+    var marker = '--- Match Context ---';
+    var idx = description.indexOf(marker);
+    if (idx === -1) return null;
+
+    var block = description.substring(idx + marker.length);
+    var endIdx = block.indexOf('\nWazuh Link:');
+    if (endIdx !== -1) {
+        block = block.substring(0, endIdx);
+    }
+
+    var ctx = {};
+    var patterns = {
+        'rule_id':          /Wazuh Rule:\s*(\S+)/,
+        'rule_description': /Wazuh Rule:\s*\S+\s*-\s*(.+)/,
+        'rule_level':       /Rule Level:\s*(\d+)/,
+        'fired_times':      /Fired Times:\s*(\d+)/,
+        'alert_set':        /Alert Set:\s*(.+)/,
+        'case_definition':  /Case Definition:\s*(.+)/,
+        'triggering_agent': /Triggering Agent:\s*(.+)/,
+        'tenant_key':       /Tenant:\s*(.+)/,
+        'mitre_ids':        /MITRE IDs:\s*(.+)/,
+        'mitre_tactics':    /MITRE Tactics:\s*(.+)/,
+        'mitre_techniques': /MITRE Techniques:\s*(.+)/,
+        'first_seen':       /First Seen:\s*(.+)/
+    };
+
+    for (var key in patterns) {
+        var m = block.match(patterns[key]);
+        if (m) {
+            ctx[key] = m[1].trim();
+        }
+    }
+
+    if (ctx.triggering_agent) {
+        ctx.triggering_agent = ctx.triggering_agent.replace(/\s*\(\d+\)\s*$/, '');
+    }
+
+    return Object.keys(ctx).length > 0 ? ctx : null;
+}
+
 function open_exception_modal() {
     $('#exception_tenant_key').val('');
     $('#exception_rule_id').val('');
@@ -334,8 +376,17 @@ function open_exception_modal() {
             var caseData = data.data;
             var matchCtx = null;
 
-            if (caseData.custom_attributes && caseData.custom_attributes.match_context) {
+            if (caseData.custom_attributes && caseData.custom_attributes.match_context
+                && Object.keys(caseData.custom_attributes.match_context).length > 0) {
                 matchCtx = caseData.custom_attributes.match_context;
+            }
+
+            if (!matchCtx && caseData.description) {
+                matchCtx = parse_description_match_context(caseData.description);
+            }
+
+            if (caseData.client && caseData.client.customer_name) {
+                $('#exception_tenant_key').val(caseData.client.customer_name);
             }
 
             if (matchCtx) {
@@ -366,9 +417,7 @@ function open_exception_modal() {
                 }
             }
 
-            if (caseData.case_tags) {
-                $('#exception_case_tags').val(caseData.case_tags);
-            } else if (caseData.tags && caseData.tags.length > 0) {
+            if (caseData.tags && caseData.tags.length > 0) {
                 var tagStr = caseData.tags.map(function(t) { return t.tag_title; }).join(', ');
                 $('#exception_case_tags').val(tagStr);
             }
