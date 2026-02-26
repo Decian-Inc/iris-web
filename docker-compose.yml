@@ -38,6 +38,8 @@ services:
       context: .
       dockerfile: docker/webApp/Dockerfile
     image: iriswebapp_app:v2.4.22
+    ports:
+      - 8000:8000
 
   worker:
     extends:
@@ -49,16 +51,18 @@ services:
     image: iriswebapp_app:v2.4.22
 
 
-  nginx:
-    extends:
-      file: docker-compose.base.yml
-      service: nginx
-    build:
-      context: ./docker/nginx
-      args:
-        NGINX_CONF_GID: 1234
-        NGINX_CONF_FILE: nginx.conf
-    image: iriswebapp_nginx:v2.4.22
+  # nginx:
+  #   extends:
+  #     file: docker-compose.base.yml
+  #     service: nginx
+  #   build:
+  #     context: ./docker/nginx
+  #     args:
+  #       NGINX_CONF_GID: 1234
+  #       NGINX_CONF_FILE: nginx.conf
+  #   image: iriswebapp_nginx:v2.4.22
+  #   volumes:
+  #     - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
 
 
 volumes:
