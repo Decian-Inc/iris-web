@@ -73,9 +73,10 @@ pipeline {
             steps {
                 script {
                     def version = "${majorVersion}.${minorVersion}.${patchVersion}"
+                    def branchTag = env.BRANCH_NAME.replaceAll("/", "-").toLowerCase()
                     def dockerTags = [
-                        "${version}-${env.BRANCH_NAME.replaceAll("/", "-")}-${env.BUILD_NUMBER}",
-                        "${version}-${env.BRANCH_NAME.replaceAll("/", "-")}"
+                        "${version}-${branchTag}-${env.BUILD_NUMBER}",
+                        "${version}-${branchTag}"
                     ]
 
                     if (env.BRANCH_NAME == 'main') {
