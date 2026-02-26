@@ -313,6 +313,113 @@ function manage_case(case_id) {
 }
 
 
+function open_exception_modal() {
+    $('#exception_tenant_key').val('');
+    $('#exception_rule_id').val('');
+    $('#exception_agent_name').val('');
+    $('#exception_case_tags').val('');
+    $('#exception_duration_hours').val(168);
+    $('#exception_reason').val('');
+    $('#exception_created_by').val($('#current_user_login').text().trim());
+    $('#exception_match_context_info').hide();
+
+    get_request_api('/case/meta')
+    .done(function(data) {
+        if (data.status === 'success' && data.data) {
+            var caseData = data.data;
+            var matchCtx = null;
+
+            if (caseData.custom_attributes && caseData.custom_attributes.match_context) {
+                matchCtx = caseData.custom_attributes.match_context;
+            }
+
+            if (matchCtx) {
+                $('#exception_match_context_info').show();
+
+                if (matchCtx.tenant_key) {
+                    $('#exception_tenant_key').val(matchCtx.tenant_key);
+                }
+                if (matchCtx.rule_id) {
+                    $('#exception_rule_id').val(matchCtx.rule_id);
+                }
+                if (matchCtx.triggering_agent) {
+                    $('#exception_agent_name').val(matchCtx.triggering_agent);
+                }
+            }
+
+            if (caseData.case_tags) {
+                $('#exception_case_tags').val(caseData.case_tags);
+            } else if (caseData.tags && caseData.tags.length > 0) {
+                var tagStr = caseData.tags.map(function(t) { return t.tag_title; }).join(', ');
+                $('#exception_case_tags').val(tagStr);
+            }
+        }
+        $('#modal_create_exception').modal({ show: true });
+    })
+    .fail(function() {
+        $('#modal_create_exception').modal({ show: true });
+    });
+}
+
+function submit_exception() {
+    var tenantKey = $('#exception_tenant_key').val().trim();
+    var ruleId = $('#exception_rule_id').val().trim();
+    var agentName = $('#exception_agent_name').val().trim();
+    var caseTags = $('#exception_case_tags').val().trim();
+    var durationHours = parseInt($('#exception_duration_hours').val(), 10);
+    var reason = $('#exception_reason').val().trim();
+    var createdBy = $('#exception_created_by').val().trim();
+
+    if (!tenantKey) {
+        notify_error('Tenant Key is required');
+        return;
+    }
+
+    if (!ruleId && !agentName && !caseTags) {
+        notify_error('At least one criteria field (Rule ID, Agent Name, or Case Tags) is required');
+        return;
+    }
+
+    var criteria = {};
+    if (ruleId) {
+        criteria.rule_id = ruleId;
+    }
+    if (agentName) {
+        criteria.agent_name = agentName;
+    }
+    if (caseTags) {
+        criteria.case_tags = caseTags.split(',').map(function(t) { return t.trim(); }).filter(function(t) { return t !== ''; });
+    }
+
+    var payload = {
+        tenant_key: tenantKey,
+        criteria: criteria,
+        csrf_token: $('#csrf_token').val()
+    };
+
+    if (durationHours && durationHours > 0) {
+        payload.duration_hours = durationHours;
+    }
+    if (reason) {
+        payload.reason = reason;
+    }
+    if (createdBy) {
+        payload.created_by = createdBy;
+    }
+
+    $('#submit_exception').prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-1"></i> Creating...');
+
+    post_request_api('/case/exceptions/create', JSON.stringify(payload))
+    .done(function(data) {
+        if (notify_auto_api(data)) {
+            $('#modal_create_exception').modal('hide');
+        }
+    })
+    .always(function() {
+        $('#submit_exception').prop('disabled', false).html('<i class="fa-solid fa-check mr-1"></i> Create Exception');
+    });
+}
+
 $(document).ready(function() {
 
     if ($("#editor_summary").attr("data-theme") !== "dark") {

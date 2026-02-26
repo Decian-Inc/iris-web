@@ -290,6 +290,78 @@
             </div>
             <div class="modal bg-shadow-gradient" tabindex="-1" role="dialog" id="modal_ac_additional" data-backdrop="true">
             </div>
+            <div style="display:none;" id="current_user_name">{{ current_user.name }}</div>
+            <div style="display:none;" id="current_user_login">{{ current_user.user }}</div>
+            <div class="modal" tabindex="-1" role="dialog" id="modal_create_exception" data-backdrop="true">
+                <div class="modal-lg modal-dialog" role="document">
+                    <div class="modal-content">
+                        <form id="form_create_exception">
+                            <div class="modal-header">
+                                <h5><i class="fa-solid fa-ban mr-2"></i>Create Alert Exception</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info" role="alert" id="exception_match_context_info" style="display:none;">
+                                    <i class="fa-solid fa-circle-info mr-1"></i> Fields pre-populated from case match context.
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <label for="exception_tenant_key" class="form-label font-weight-bold">Tenant Key <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="exception_tenant_key" placeholder="e.g. ehtest" required>
+                                    </div>
+                                </div>
+                                <fieldset class="border rounded p-3 mb-3">
+                                    <legend class="w-auto px-2" style="font-size: 1rem; font-weight: bold;">Criteria <small class="text-muted">(at least one required)</small></legend>
+                                    <div class="row mb-2">
+                                        <div class="col-12">
+                                            <label for="exception_rule_id" class="form-label">Rule ID</label>
+                                            <input type="text" class="form-control" id="exception_rule_id" placeholder='Exact, glob (web-*), or regex (/^601[0-9]{2}$/)'>
+                                            <small class="form-text text-muted">Supports exact match, glob wildcards (*, ?), or regex (/pattern/)</small>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-12">
+                                            <label for="exception_agent_name" class="form-label">Agent Name</label>
+                                            <input type="text" class="form-control" id="exception_agent_name" placeholder='Exact, glob (server-*), or regex (/pattern/)'>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <label for="exception_case_tags" class="form-label">Case Tags</label>
+                                            <input type="text" class="form-control" id="exception_case_tags" placeholder="Comma-separated tags, e.g. eventlog_cleared, brute_force">
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <label for="exception_duration_hours" class="form-label font-weight-bold">Duration (hours)</label>
+                                        <input type="number" class="form-control" id="exception_duration_hours" value="168" min="1" max="8760">
+                                        <small class="form-text text-muted">Default: 168h (7 days). Max: 8760h (1 year)</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <label for="exception_created_by" class="form-label font-weight-bold">Created By</label>
+                                        <input type="text" class="form-control" id="exception_created_by" placeholder="analyst@example.com">
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-12">
+                                        <label for="exception_reason" class="form-label font-weight-bold">Reason</label>
+                                        <textarea class="form-control" id="exception_reason" rows="3" placeholder="Why is this exception being created? e.g. Benign scheduled maintenance window"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default mr-auto" data-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-outline-success ml-auto" id="submit_exception" onclick="submit_exception();">
+                                    <i class="fa-solid fa-check mr-1"></i> Create Exception
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
             <div class="modal bg-shadow-gradient" tabindex="-1" role="dialog" id="modal_case_review" data-backdrop="static" data-keyboard="false">
                 <div class="modal-dialog modal-lg" role="document">
                     <div class="modal-content">

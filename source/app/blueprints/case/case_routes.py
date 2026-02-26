@@ -20,6 +20,7 @@ import binascii
 import marshmallow
 # IMPORTS ------------------------------------------------
 import traceback
+import requests as http_requests
 from flask import Blueprint
 from flask import redirect
 from flask import render_template
@@ -452,3 +453,91 @@ def case_review(caseid):
     db.session.commit()
 
     return response_success("Case review updated", data=CaseSchema().dump(case))
+
+
+@case_blueprint.route('/case/exceptions/create', methods=['POST'])
+@ac_api_case_requires(CaseAccessLevel.full_access)
+def case_exception_create(caseid):
+    postprocessor_url = app.config.get('POSTPROCESSOR_URL', '')
+    if not postprocessor_url:
+        return response_error('Postprocessor URL is not configured. Set IRIS_POSTPROCESSOR_URL environment variable.', status=500)
+
+    js_data = request.get_json()
+    if not js_data:
+        return response_error('Invalid request data')
+
+    required_fields = ['tenant_key', 'criteria']
+    for field in required_fields:
+        if field not in js_data:
+            return response_error(f'Missing required field: {field}')
+
+    criteria = js_data.get('criteria', {})
+    if not any(k in criteria for k in ('rule_id', 'agent_name', 'case_tags')):
+        return response_error('Criteria must contain at least one of: rule_id, agent_name, case_tags')
+
+    payload = {
+        'tenant_key': js_data['tenant_key'],
+        'criteria': criteria,
+    }
+    if js_data.get('duration_hours'):
+        payload['duration_hours'] = js_data['duration_hours']
+    if js_data.get('reason'):
+        payload['reason'] = js_data['reason']
+    if js_data.get('created_by'):
+        payload['created_by'] = js_data['created_by']
+
+    try:
+        resp = http_requests.post(
+            f"{postprocessor_url.rstrip('/')}/exceptions",
+            json=payload,
+            timeout=15
+        )
+        resp_data = resp.json()
+    except http_requests.exceptions.ConnectionError:
+        return response_error('Unable to connect to postprocessor service')
+    except http_requests.exceptions.Timeout:
+        return response_error('Postprocessor service request timed out')
+    except Exception as e:
+        log.error(f"Postprocessor exception creation failed: {e}")
+        return response_error(f'Postprocessor request failed: {str(e)}')
+
+    if resp.status_code == 201 or resp_data.get('status') == 'success':
+        track_activity("created alert exception via postprocessor", caseid)
+        return response_success("Exception created successfully", data=resp_data.get('exception', resp_data))
+
+    error_msg = resp_data.get('detail', resp_data.get('message', 'Unknown error from postprocessor'))
+    return response_error(f'Postprocessor error: {error_msg}')
+
+
+@case_blueprint.route('/case/exceptions/list', methods=['GET'])
+@ac_api_case_requires(CaseAccessLevel.read_only, CaseAccessLevel.full_access)
+def case_exception_list(caseid):
+    postprocessor_url = app.config.get('POSTPROCESSOR_URL', '')
+    if not postprocessor_url:
+        return response_error('Postprocessor URL is not configured. Set IRIS_POSTPROCESSOR_URL environment variable.', status=500)
+
+    tenant_key = request.args.get('tenant_key', '')
+    params = {}
+    if tenant_key:
+        params['tenant_key'] = tenant_key
+
+    try:
+        resp = http_requests.get(
+            f"{postprocessor_url.rstrip('/')}/exceptions",
+            params=params,
+            timeout=15
+        )
+        resp_data = resp.json()
+    except http_requests.exceptions.ConnectionError:
+        return response_error('Unable to connect to postprocessor service')
+    except http_requests.exceptions.Timeout:
+        return response_error('Postprocessor service request timed out')
+    except Exception as e:
+        log.error(f"Postprocessor exception listing failed: {e}")
+        return response_error(f'Postprocessor request failed: {str(e)}')
+
+    if resp.status_code == 200:
+        return response_success("Exceptions fetched", data=resp_data)
+
+    error_msg = resp_data.get('detail', resp_data.get('message', 'Unknown error from postprocessor'))
+    return response_error(f'Postprocessor error: {error_msg}')
