@@ -315,41 +315,47 @@ function manage_case(case_id) {
 
 function parse_description_match_context(description) {
     if (!description) return null;
-    var marker = '--- Match Context ---';
-    var idx = description.indexOf(marker);
-    if (idx === -1) return null;
 
-    var block = description.substring(idx + marker.length);
-    var endIdx = block.indexOf('\nWazuh Link:');
-    if (endIdx !== -1) {
-        block = block.substring(0, endIdx);
-    }
-
-    var ctx = {};
-    var patterns = {
-        'rule_id':          /Wazuh Rule:\s*(\S+)/,
-        'rule_description': /Wazuh Rule:\s*\S+\s*-\s*(.+)/,
-        'rule_level':       /Rule Level:\s*(\d+)/,
-        'fired_times':      /Fired Times:\s*(\d+)/,
-        'alert_set':        /Alert Set:\s*(.+)/,
-        'case_definition':  /Case Definition:\s*(.+)/,
-        'triggering_agent': /Triggering Agent:\s*(.+)/,
-        'tenant_key':       /Tenant:\s*(.+)/,
-        'mitre_ids':        /MITRE IDs:\s*(.+)/,
-        'mitre_tactics':    /MITRE Tactics:\s*(.+)/,
-        'mitre_techniques': /MITRE Techniques:\s*(.+)/,
-        'first_seen':       /First Seen:\s*(.+)/
-    };
-
-    for (var key in patterns) {
-        var m = block.match(patterns[key]);
-        if (m) {
-            ctx[key] = m[1].trim();
+    var markers = ['### Match Context', '--- Match Context ---'];
+    var idx = -1;
+    var markerLen = 0;
+    for (var i = 0; i < markers.length; i++) {
+        idx = description.indexOf(markers[i]);
+        if (idx !== -1) {
+            markerLen = markers[i].length;
+            break;
         }
     }
+    if (idx === -1) return null;
 
-    if (ctx.triggering_agent) {
-        ctx.triggering_agent = ctx.triggering_agent.replace(/\s*\(\d+\)\s*$/, '');
+    var block = description.substring(idx + markerLen);
+
+    var ctx = {};
+    var fieldMap = {
+        'Wazuh Rule':        function(v) {
+            var parts = v.match(/^(\S+)\s*-\s*(.+)/);
+            if (parts) { ctx.rule_id = parts[1].trim(); ctx.rule_description = parts[2].trim(); }
+            else { ctx.rule_id = v.trim(); }
+        },
+        'Rule Level':        function(v) { ctx.rule_level = v; },
+        'Fired Times':       function(v) { ctx.fired_times = v; },
+        'Alert Set':         function(v) { ctx.alert_set = v; },
+        'Case Definition':   function(v) { ctx.case_definition = v; },
+        'Triggering Agent':  function(v) { ctx.triggering_agent = v.replace(/\s*\(\d+\)\s*$/, ''); },
+        'Tenant':            function(v) { ctx.tenant_key = v; },
+        'MITRE IDs':         function(v) { ctx.mitre_ids = v; },
+        'MITRE Tactics':     function(v) { ctx.mitre_tactics = v; },
+        'MITRE Techniques':  function(v) { ctx.mitre_techniques = v; },
+        'First Seen':        function(v) { ctx.first_seen = v; }
+    };
+
+    for (var label in fieldMap) {
+        var mdPattern = new RegExp('\\*\\*' + label + ':\\*\\*\\s*(.+)');
+        var plainPattern = new RegExp(label + ':\\s*(.+)');
+        var m = block.match(mdPattern) || block.match(plainPattern);
+        if (m) {
+            fieldMap[label](m[1].trim());
+        }
     }
 
     return Object.keys(ctx).length > 0 ? ctx : null;
