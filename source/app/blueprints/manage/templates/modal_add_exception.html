@@ -1,0 +1,82 @@
+<div class="modal-header">
+    <div class="col md-12">
+        <div class="row">
+            <div class="col">
+                <h4 class="modal-title mt-1 mr-4" id="exception_modal_title">Add Exception</h4>
+            </div>
+            <div class="col">
+                <div class="row float-right">
+                    <button type="button" class="pull-right btn bg-transparent" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true"><i class="fa fa-times"></i></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-body">
+    <!-- Create / Edit form -->
+    <div id="exception_form_main">
+        <form id="form_exception" onsubmit="return false;">
+            <input type="hidden" id="exception_id" value="">
+            <input type="hidden" id="exception_mode" value="create">
+
+            <div class="form-group">
+                <label for="exception_tenant_key">Tenant Key *</label>
+                <input type="text" class="form-control" id="exception_tenant_key" placeholder="e.g. customer-name" required>
+            </div>
+
+            <div class="card card-body bg-light mb-3">
+                <h6 class="card-title mb-2">Criteria <small class="text-muted">(at least one required)</small></h6>
+                <div class="form-group">
+                    <label for="exception_rule_id">Rule ID(s)</label>
+                    <input type="text" class="form-control" id="exception_rule_id" placeholder="Comma-separated rule IDs">
+                    <small class="form-text text-muted">Multiple IDs separated by commas</small>
+                </div>
+                <div class="form-group">
+                    <label for="exception_agent_name">Agent Name</label>
+                    <input type="text" class="form-control" id="exception_agent_name" placeholder="Agent name">
+                </div>
+                <div class="form-group">
+                    <label for="exception_case_tags">Case Tags</label>
+                    <input type="text" class="form-control" id="exception_case_tags" placeholder="Comma-separated tags">
+                    <small class="form-text text-muted">Multiple tags separated by commas</small>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="exception_duration">Duration (hours)</label>
+                <input type="number" class="form-control" id="exception_duration" value="168" min="1">
+            </div>
+            <div class="form-group">
+                <label for="exception_reason">Reason</label>
+                <textarea class="form-control" id="exception_reason" rows="3" placeholder="Reason for exception"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="exception_created_by">Created By</label>
+                <input type="text" class="form-control" id="exception_created_by" placeholder="Your name or username">
+            </div>
+        </form>
+    </div>
+
+    <!-- Extend TTL form (simpler) -->
+    <div id="exception_form_extend" style="display:none;">
+        <form id="form_extend_exception" onsubmit="return false;">
+            <input type="hidden" id="extend_exception_id" value="">
+            <div class="form-group">
+                <label for="extend_additional_hours">Additional Hours *</label>
+                <input type="number" class="form-control" id="extend_additional_hours" value="168" min="1" required>
+                <small class="form-text text-muted">Number of hours to add to the current TTL</small>
+            </div>
+        </form>
+    </div>
+
+    <div class="mt-4">
+        <button type="button" class="btn btn-outline-danger" id="btn_delete_from_modal" style="display:none;" onclick="">
+            Delete
+        </button>
+        <button type="button" class="btn btn-outline-success float-right" id="btn_submit_exception" onclick="submit_manage_exception();">
+            Save
+        </button>
+    </div>
+</div>
