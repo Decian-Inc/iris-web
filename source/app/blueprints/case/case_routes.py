@@ -69,6 +69,7 @@ from app.schema.marshables import TaskLogSchema, CaseSchema, CaseDetailsSchema
 from app.util import ac_api_case_requires, add_obj_history_entry
 from app.util import ac_case_requires
 from app.util import ac_socket_requires
+from app.iris_engine.utils.postprocessor import postprocessor_get, postprocessor_post
 from app.util import response_error
 from app.util import response_success
 
@@ -452,3 +453,63 @@ def case_review(caseid):
     db.session.commit()
 
     return response_success("Case review updated", data=CaseSchema().dump(case))
+
+
+@case_blueprint.route('/case/exceptions/create', methods=['POST'])
+@ac_api_case_requires(CaseAccessLevel.full_access)
+def case_exception_create(caseid):
+    js_data = request.get_json()
+    if not js_data:
+        return response_error('Invalid request data')
+
+    required_fields = ['tenant_key', 'criteria']
+    for field in required_fields:
+        if field not in js_data:
+            return response_error(f'Missing required field: {field}')
+
+    criteria = js_data.get('criteria', {})
+    if not any(k in criteria for k in ('rule_id', 'agent_name', 'case_tags')):
+        return response_error('Criteria must contain at least one of: rule_id, agent_name, case_tags')
+
+    payload = {
+        'tenant_key': js_data['tenant_key'],
+        'criteria': criteria,
+    }
+    if js_data.get('duration_hours'):
+        payload['duration_hours'] = js_data['duration_hours']
+    if js_data.get('reason'):
+        payload['reason'] = js_data['reason']
+    if js_data.get('created_by'):
+        payload['created_by'] = js_data['created_by']
+
+    resp, err = postprocessor_post('/exceptions', json_data=payload)
+    if err:
+        return err
+
+    resp_data = resp.json()
+    if resp.status_code == 201 or resp_data.get('status') == 'success':
+        track_activity("created alert exception via postprocessor", caseid)
+        return response_success("Exception created successfully", data=resp_data.get('exception', resp_data))
+
+    error_msg = resp_data.get('detail', resp_data.get('message', 'Unknown error from postprocessor'))
+    return response_error(f'Postprocessor error: {error_msg}')
+
+
+@case_blueprint.route('/case/exceptions/list', methods=['GET'])
+@ac_api_case_requires(CaseAccessLevel.read_only, CaseAccessLevel.full_access)
+def case_exception_list(caseid):
+    params = {}
+    tenant_key = request.args.get('tenant_key', '')
+    if tenant_key:
+        params['tenant_key'] = tenant_key
+
+    resp, err = postprocessor_get('/exceptions', params=params)
+    if err:
+        return err
+
+    if resp.status_code == 200:
+        return response_success("Exceptions fetched", data=resp.json())
+
+    resp_data = resp.json()
+    error_msg = resp_data.get('detail', resp_data.get('message', 'Unknown error from postprocessor'))
+    return response_error(f'Postprocessor error: {error_msg}')

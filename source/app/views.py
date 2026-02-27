@@ -62,6 +62,7 @@ from app.blueprints.manage.manage_templates_routes import manage_templates_bluep
 from app.blueprints.manage.manage_tlps_routes import manage_tlp_type_blueprint
 from app.blueprints.manage.manage_case_templates_routes import manage_case_templates_blueprint
 from app.blueprints.manage.manage_users import manage_users_blueprint
+from app.blueprints.manage.manage_exceptions_routes import manage_exceptions_blueprint
 from app.blueprints.manage.manage_integrations.manage_integrations_routes import manage_integrations_blueprint
 from app.blueprints.overview.overview_routes import overview_blueprint
 from app.blueprints.threat_intel.threat_intel_routes import threat_intel_blueprint
@@ -104,6 +105,7 @@ app.register_blueprint(manage_evidence_types_blueprint)
 app.register_blueprint(manage_assets_blueprint)
 app.register_blueprint(manage_tags_blueprint)
 app.register_blueprint(manage_integrations_blueprint)
+app.register_blueprint(manage_exceptions_blueprint)
 app.register_blueprint(saved_filters_blueprint)
 
 app.register_blueprint(ctx_blueprint)

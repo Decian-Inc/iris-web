@@ -1,0 +1,152 @@
+{% extends "layouts/default.html" %}
+
+{% block title %} Manage Exceptions {% endblock title %}
+
+{% block content %}
+
+    {% if current_user.is_authenticated %}
+        {{ form.hidden_tag() }}
+        <div class="page-inner">
+            <!-- Stats Row -->
+            <div class="row" id="exception_stats_row">
+                <div class="col-sm-6 col-md-4">
+                    <div class="card card-stats card-round">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-icon">
+                                    <div class="icon-big text-center icon-primary bubble-shadow-small">
+                                        <i class="fa-solid fa-ban"></i>
+                                    </div>
+                                </div>
+                                <div class="col col-stats ml-3 ml-sm-0">
+                                    <div class="numbers">
+                                        <p class="card-category">Total Exceptions</p>
+                                        <h4 class="card-title" id="stat_total">-</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-4">
+                    <div class="card card-stats card-round">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-icon">
+                                    <div class="icon-big text-center icon-info bubble-shadow-small">
+                                        <i class="fa-solid fa-building"></i>
+                                    </div>
+                                </div>
+                                <div class="col col-stats ml-3 ml-sm-0">
+                                    <div class="numbers">
+                                        <p class="card-category">Tenants</p>
+                                        <h4 class="card-title" id="stat_tenants">-</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-4">
+                    <div class="card card-stats card-round">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-icon">
+                                    <div class="icon-big text-center icon-warning bubble-shadow-small">
+                                        <i class="fa-solid fa-clock"></i>
+                                    </div>
+                                </div>
+                                <div class="col col-stats ml-3 ml-sm-0">
+                                    <div class="numbers">
+                                        <p class="card-category">Expiring Soon</p>
+                                        <h4 class="card-title" id="stat_expiring">-</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Table Card -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="row">
+                                <div class="col">
+                                    <div class="card-title">Exceptions Management</div>
+                                </div>
+                                <div class="col">
+                                    <button type="button" class="btn btn-sm btn-dark float-right ml-2" onclick="refresh_exception_table(true);">
+                                        Refresh
+                                    </button>
+                                    <button class="btn btn-sm btn-dark float-right ml-2" onclick="add_exception();">
+                                        <i class="fa-solid fa-plus mr-1"></i>Add Exception
+                                    </button>
+                                    <button class="btn btn-sm btn-danger float-right ml-2" id="btn_bulk_delete" style="display:none;" onclick="bulk_delete_exceptions();">
+                                        <i class="fa-solid fa-trash mr-1"></i>Delete Selected
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Filters -->
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Tenant</label>
+                                    <select class="form-control form-control-sm" id="filter_tenant">
+                                        <option value="">All Tenants</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Search</label>
+                                    <input type="text" class="form-control form-control-sm" id="filter_search" placeholder="Search exceptions...">
+                                </div>
+                            </div>
+
+                            <div class="table-responsive" id="exceptions_table_wrapper">
+                                <table class="table display table-striped table-hover" width="100%"
+                                       cellspacing="0" id="exceptions_table">
+                                    <thead>
+                                    <tr>
+                                        <th style="width: 30px;">
+                                            <input type="checkbox" id="select_all_exceptions">
+                                        </th>
+                                        <th>Tenant</th>
+                                        <th>Criteria</th>
+                                        <th>Duration</th>
+                                        <th>TTL Remaining</th>
+                                        <th>Reason</th>
+                                        <th>Created By</th>
+                                        <th>Created At</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exception Modal -->
+            <div class="modal" tabindex="-1" role="dialog" id="modal_exception" data-backdrop="true">
+                <div class="modal-lg modal-dialog" role="document">
+                    <div class="modal-content" id="modal_exception_content">
+                        {% include "modal_add_exception.html" %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    {% endif %}
+
+{% endblock content %}
+
+{% block javascripts %}
+
+    <script src="/static/assets/js/iris/manage.exceptions.js"></script>
+
+{% endblock javascripts %}
