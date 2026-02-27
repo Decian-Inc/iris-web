@@ -482,7 +482,7 @@ function submit_exception() {
         payload.created_by = createdBy;
     }
 
-    $('#submit_exception').prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-1"></i> Creating...');
+    $('#btn_submit_exception').prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-1"></i> Creating...');
 
     post_request_api('/case/exceptions/create', JSON.stringify(payload))
     .done(function(data) {
@@ -491,7 +491,7 @@ function submit_exception() {
         }
     })
     .always(function() {
-        $('#submit_exception').prop('disabled', false).html('<i class="fa-solid fa-check mr-1"></i> Create Exception');
+        $('#btn_submit_exception').prop('disabled', false).html('<i class="fa-solid fa-check mr-1"></i> Create Exception');
     });
 }
 
