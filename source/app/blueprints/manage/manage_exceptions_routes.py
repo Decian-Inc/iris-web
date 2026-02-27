@@ -21,6 +21,7 @@ from flask import redirect
 from flask import render_template
 from flask import request
 from flask import url_for
+from flask_wtf import FlaskForm
 
 from app.iris_engine.utils.postprocessor import postprocessor_delete
 from app.iris_engine.utils.postprocessor import postprocessor_get
@@ -51,7 +52,8 @@ def _proxy_error(resp_data):
 def manage_exceptions_index(caseid, url_redir):
     if url_redir:
         return redirect(url_for('manage_exceptions.manage_exceptions_index', cid=caseid))
-    return render_template('manage_exceptions.html')
+    form = FlaskForm()
+    return render_template('manage_exceptions.html', form=form)
 
 
 @manage_exceptions_blueprint.route('/manage/exceptions/list', methods=['GET'])

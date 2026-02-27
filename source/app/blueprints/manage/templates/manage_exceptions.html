@@ -5,6 +5,7 @@
 {% block content %}
 
     {% if current_user.is_authenticated %}
+        {{ form.hidden_tag() }}
         <div class="page-inner">
             <!-- Stats Row -->
             <div class="row" id="exception_stats_row">

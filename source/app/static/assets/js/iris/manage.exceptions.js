@@ -350,7 +350,8 @@ function submit_manage_exception() {
         criteria: criteria,
         duration_hours: parseInt($('#exception_duration').val()) || 168,
         reason: $('#exception_reason').val().trim(),
-        created_by: $('#exception_created_by').val().trim()
+        created_by: $('#exception_created_by').val().trim(),
+        csrf_token: $('#csrf_token').val()
     };
 
     var exceptionId = $('#exception_id').val();
@@ -386,7 +387,7 @@ function submit_extend_exception() {
         return;
     }
 
-    var payload = { additional_hours: hours };
+    var payload = { additional_hours: hours, csrf_token: $('#csrf_token').val() };
 
     $('#btn_submit_exception').prop('disabled', true).text('Extending...');
 
@@ -446,7 +447,7 @@ function bulk_delete_exceptions() {
     })
     .then(function (willDelete) {
         if (willDelete) {
-            post_request_api('/manage/exceptions/bulk-delete', JSON.stringify({ ids: ids }), true)
+            post_request_api('/manage/exceptions/bulk-delete', JSON.stringify({ ids: ids, csrf_token: $('#csrf_token').val() }), true)
             .done(function (data) {
                 if (notify_auto_api(data)) {
                     refresh_exception_table();
