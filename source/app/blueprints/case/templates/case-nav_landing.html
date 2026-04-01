@@ -29,6 +29,11 @@
                                                 <i class="fa-solid fa-ban mr-1"></i><span>Create Exception</span>
                                             </button>
                                         </li>
+                                        <li class="nav-item">
+                                            <button class="btn btn-sm btn-outline-info float-left ml-2" onclick="openAiAnalysisModal();">
+                                                <i class="fa-solid fa-brain mr-1"></i><span>AI Analysis</span>
+                                            </button>
+                                        </li>
                                         <li class="nav-item ml-auto">
                                                                                     {% if case.review_status.status_name == "Not reviewed" or not case.review_status %}
                                                 <button class="btn btn-sm btn-light float-left ml-2" id="request_review">

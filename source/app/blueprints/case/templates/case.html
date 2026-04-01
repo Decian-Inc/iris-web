@@ -400,6 +400,124 @@
                     </div>
                 </div>
             </div>
+            <div style="display:none;" id="ai_case_context" data-case-id="{{ case.case_id }}" data-client-name="{{ case.client.name }}" data-client-id="{{ case.client_id }}"></div>
+            <div class="modal" tabindex="-1" role="dialog" id="modal_ai_analysis" data-backdrop="true">
+                <div class="modal-lg modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5><i class="fa-solid fa-brain mr-2"></i>Perform AI Analysis</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="ai_models_loading" class="text-center py-3">
+                                <i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading available models...
+                            </div>
+                            <div id="ai_models_error" class="alert alert-danger" style="display:none;"></div>
+                            <div id="ai_form_panel" style="display:none;">
+                                <div class="row mb-3">
+                                    <div class="col-8">
+                                        <label for="ai_model_select" class="form-label font-weight-bold">Model</label>
+                                        <select class="form-control" id="ai_model_select"></select>
+                                    </div>
+                                    <div class="col-4">
+                                        <label for="ai_tier_select" class="form-label font-weight-bold">Search Tier</label>
+                                        <select class="form-control" id="ai_tier_select">
+                                            <option value="quick">Quick (24h)</option>
+                                            <option value="standard" selected>Standard (7d)</option>
+                                            <option value="deep">Deep (30d)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <label for="ai_tenant_id" class="form-label font-weight-bold">Tenant ID <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="ai_tenant_id" placeholder="e.g. acme-corp">
+                                        <small class="form-text text-muted">Scopes MCP queries to a specific tenant environment</small>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-12">
+                                        <label for="ai_directive" class="form-label font-weight-bold">Directive</label>
+                                        <textarea class="form-control" id="ai_directive" rows="3" placeholder="e.g. Investigate all IOCs and correlate alerts. Identify source and scope of compromise."></textarea>
+                                        <small class="form-text text-muted">Free-text instruction for the AI agent. Leave empty for a general investigation.</small>
+                                    </div>
+                                </div>
+                                <div id="ai_provider_info" class="mb-2">
+                                    <small class="text-muted"><i class="fa-solid fa-circle-info mr-1"></i>Provider: <span id="ai_provider_label">-</span></small>
+                                </div>
+                            </div>
+                            <div id="ai_progress_panel" style="display:none;">
+                                <div class="text-center py-4">
+                                    <i class="fa-solid fa-spinner fa-spin fa-2x mb-3 d-block text-info"></i>
+                                    <h5>Analysis in progress...</h5>
+                                    <p class="text-muted mb-0">This may take several minutes depending on the model and case complexity.</p>
+                                    <p class="text-muted" id="ai_elapsed_timer"></p>
+                                </div>
+                            </div>
+                            <div id="ai_result_panel" style="display:none;">
+                                <div id="ai_result_success" style="display:none;">
+                                    <div class="alert alert-success">
+                                        <h5 class="alert-heading mb-1"><i class="fa-solid fa-check-circle mr-1"></i> Analysis Complete</h5>
+                                        <span id="ai_result_summary"></span>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="card bg-light">
+                                                <div class="card-body py-2 text-center">
+                                                    <small class="text-muted d-block">Risk Level</small>
+                                                    <strong id="ai_result_risk" class="d-block"></strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="card bg-light">
+                                                <div class="card-body py-2 text-center">
+                                                    <small class="text-muted d-block">Duration</small>
+                                                    <strong id="ai_result_duration"></strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-4">
+                                            <div class="card bg-light"><div class="card-body py-2 text-center">
+                                                <small class="text-muted d-block">Input Tokens</small>
+                                                <strong id="ai_result_input_tokens"></strong>
+                                            </div></div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="card bg-light"><div class="card-body py-2 text-center">
+                                                <small class="text-muted d-block">Output Tokens</small>
+                                                <strong id="ai_result_output_tokens"></strong>
+                                            </div></div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="card bg-light"><div class="card-body py-2 text-center">
+                                                <small class="text-muted d-block">Tool Calls</small>
+                                                <strong id="ai_result_tool_calls"></strong>
+                                            </div></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="ai_result_error" style="display:none;">
+                                    <div class="alert alert-danger">
+                                        <h5 class="alert-heading mb-1"><i class="fa-solid fa-circle-exclamation mr-1"></i> Analysis Failed</h5>
+                                        <span id="ai_result_error_msg"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer" id="ai_modal_footer">
+                            <button type="button" class="btn btn-default mr-auto" data-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-outline-info ml-auto" id="btn_run_ai_analysis" onclick="runAiAnalysis();">
+                                <i class="fa-solid fa-brain mr-1"></i> Run Analysis
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="modal bg-shadow-gradient" tabindex="-1" role="dialog" id="modal_case_review" data-backdrop="static" data-keyboard="false">
                 <div class="modal-dialog modal-lg" role="document">
                     <div class="modal-content">
@@ -445,6 +563,7 @@
 <script src="/static/assets/js/iris/case.summary.js"></script>
 <script src="/static/assets/js/plugin/select/bootstrap-select.min.js"></script>
 <script src="/static/assets/js/plugin/select/bootstrap-multiselect.min.js"></script>
+<script src="/static/assets/js/iris/case.ai-analysis.js"></script>
 
 <script>
     $('#modal_select_report').selectpicker();
