@@ -418,7 +418,9 @@
                             <div id="ai_form_panel" style="display:none;">
                                 <div class="row mb-3">
                                     <div class="col-8">
-                                        <label for="ai_model_select" class="form-label font-weight-bold">Model</label>
+                                        <label for="ai_model_select" class="form-label font-weight-bold">Model
+                                            <a href="#" onclick="_loadModels(true); return false;" title="Refresh model list" class="ml-1 text-muted"><i class="fa-solid fa-arrows-rotate" style="font-size:.75em"></i></a>
+                                        </label>
                                         <select class="form-control" id="ai_model_select"></select>
                                     </div>
                                     <div class="col-4">
@@ -449,56 +451,16 @@
                                 </div>
                             </div>
                             <div id="ai_progress_panel" style="display:none;">
-                                <div class="text-center py-4">
+                                <div class="text-center py-3">
                                     <i class="fa-solid fa-spinner fa-spin fa-2x mb-3 d-block text-info"></i>
-                                    <h5>Analysis in progress...</h5>
-                                    <p class="text-muted mb-0">This may take several minutes depending on the model and case complexity.</p>
-                                    <p class="text-muted" id="ai_elapsed_timer"></p>
+                                    <p class="text-muted mb-0">Submitting analysis request...</p>
                                 </div>
                             </div>
                             <div id="ai_result_panel" style="display:none;">
                                 <div id="ai_result_success" style="display:none;">
-                                    <div class="alert alert-success">
-                                        <h5 class="alert-heading mb-1"><i class="fa-solid fa-check-circle mr-1"></i> Analysis Complete</h5>
+                                    <div class="alert alert-info">
+                                        <h5 class="alert-heading mb-1"><i class="fa-solid fa-paper-plane mr-1"></i> Analysis Submitted</h5>
                                         <span id="ai_result_summary"></span>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-6">
-                                            <div class="card bg-light">
-                                                <div class="card-body py-2 text-center">
-                                                    <small class="text-muted d-block">Risk Level</small>
-                                                    <strong id="ai_result_risk" class="d-block"></strong>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="card bg-light">
-                                                <div class="card-body py-2 text-center">
-                                                    <small class="text-muted d-block">Duration</small>
-                                                    <strong id="ai_result_duration"></strong>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row mt-2">
-                                        <div class="col-4">
-                                            <div class="card bg-light"><div class="card-body py-2 text-center">
-                                                <small class="text-muted d-block">Input Tokens</small>
-                                                <strong id="ai_result_input_tokens"></strong>
-                                            </div></div>
-                                        </div>
-                                        <div class="col-4">
-                                            <div class="card bg-light"><div class="card-body py-2 text-center">
-                                                <small class="text-muted d-block">Output Tokens</small>
-                                                <strong id="ai_result_output_tokens"></strong>
-                                            </div></div>
-                                        </div>
-                                        <div class="col-4">
-                                            <div class="card bg-light"><div class="card-body py-2 text-center">
-                                                <small class="text-muted d-block">Tool Calls</small>
-                                                <strong id="ai_result_tool_calls"></strong>
-                                            </div></div>
-                                        </div>
                                     </div>
                                 </div>
                                 <div id="ai_result_error" style="display:none;">

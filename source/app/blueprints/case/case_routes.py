@@ -19,6 +19,7 @@
 import binascii
 import marshmallow
 # IMPORTS ------------------------------------------------
+import threading
 import traceback
 from flask import Blueprint
 from flask import redirect
@@ -33,6 +34,7 @@ from sqlalchemy import and_
 from sqlalchemy import desc
 
 from app import app
+from app import cache
 from app import db
 from app import socket_io
 from app.blueprints.case.case_assets_routes import case_assets_blueprint
@@ -516,15 +518,31 @@ def case_exception_list(caseid):
     return response_error(f'Postprocessor error: {error_msg}')
 
 
+AI_MODELS_CACHE_KEY = 'aisocagent_models'
+AI_MODELS_CACHE_TTL = 86400  # 24 hours
+
+
 @case_blueprint.route('/case/ai/models', methods=['GET'])
 @ac_api_case_requires(CaseAccessLevel.read_only, CaseAccessLevel.full_access)
 def case_ai_models(caseid):
+    force = request.args.get('refresh', '').lower() in ('1', 'true')
+
+    if not force:
+        cached = cache.get(AI_MODELS_CACHE_KEY)
+        if cached is not None:
+            return response_success("AI models fetched", data=cached)
+
     resp, err = aisocagent_get('/api/v1/models')
     if err:
+        cached = cache.get(AI_MODELS_CACHE_KEY)
+        if cached is not None:
+            return response_success("AI models fetched (cached, agent unreachable)", data=cached)
         return err
 
     if resp.status_code == 200:
-        return response_success("AI models fetched", data=resp.json())
+        data = resp.json()
+        cache.set(AI_MODELS_CACHE_KEY, data, timeout=AI_MODELS_CACHE_TTL)
+        return response_success("AI models fetched", data=data)
 
     resp_data = resp.json() if resp.headers.get('content-type', '').startswith('application/json') else {}
     error_msg = resp_data.get('detail', resp_data.get('message', 'Unknown error from AI SOC Agent'))
@@ -540,15 +558,16 @@ def case_ai_analyze(caseid):
 
     js_data['case_id'] = caseid
 
-    resp, err = aisocagent_post('/api/v1/analyze', json_data=js_data)
-    if err:
-        return err
+    def _run_analysis(payload):
+        try:
+            aisocagent_post('/api/v1/analyze', json_data=payload)
+        except Exception as e:
+            app.logger.error(f"Background AI analysis for case {caseid} failed: {e}")
 
-    resp_data = resp.json() if resp.headers.get('content-type', '').startswith('application/json') else {}
+    t = threading.Thread(target=_run_analysis, args=(js_data,), daemon=True)
+    t.start()
 
-    if resp.status_code == 200:
-        track_activity("performed AI analysis via SOC agent", caseid)
-        return response_success("AI analysis complete", data=resp_data)
-
-    error_msg = resp_data.get('detail', resp_data.get('error', 'Unknown error from AI SOC Agent'))
-    return response_error(f'AI SOC Agent error: {error_msg}')
+    track_activity("submitted AI analysis via SOC agent", caseid)
+    return response_success(
+        "AI analysis submitted. Results will appear in case notes when complete."
+    )

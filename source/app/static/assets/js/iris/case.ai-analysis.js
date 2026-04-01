@@ -4,8 +4,6 @@ var LS_MODEL_KEY  = 'iris_ai_analysis_last_model';
 var LS_TIER_KEY   = 'iris_ai_analysis_last_tier';
 var LS_TENANT_KEY = 'iris_ai_analysis_last_tenant';
 
-var _elapsedInterval = null;
-var _elapsedStart    = null;
 
 /* ------------------------------------------------------------------ */
 /*  Entry point — called by the toolbar button                        */
@@ -26,8 +24,9 @@ function openAiAnalysisModal() {
 /* ------------------------------------------------------------------ */
 /*  Fetch models via IRIS proxy                                       */
 /* ------------------------------------------------------------------ */
-function _loadModels() {
-    get_request_api('/case/ai/models')
+function _loadModels(forceRefresh) {
+    var uri = '/case/ai/models' + (forceRefresh ? '&refresh=1' : '');
+    get_request_api(uri)
     .done(function(data) {
         $('#ai_models_loading').hide();
         if (data.status === 'success' && data.data) {
@@ -164,24 +163,21 @@ function runAiAnalysis() {
     $('#ai_result_panel').hide();
     $('#btn_run_ai_analysis').prop('disabled', true);
     $('#ai_progress_panel').show();
-    _startElapsedTimer();
 
     post_request_api('/case/ai/analyze', JSON.stringify(payload))
     .done(function(data) {
-        _stopElapsedTimer();
-        if (data.status === 'success' && data.data) {
-            _showResult(data.data);
+        $('#ai_progress_panel').hide();
+        if (data.status === 'success') {
+            _showSubmitted(modelId);
         } else {
-            $('#ai_progress_panel').hide();
             $('#ai_result_panel').show();
             $('#ai_result_success').hide();
             $('#ai_result_error').show();
-            $('#ai_result_error_msg').text(data.message || 'Analysis failed');
+            $('#ai_result_error_msg').text(data.message || 'Failed to submit analysis');
             $('#btn_run_ai_analysis').prop('disabled', false);
         }
     })
     .fail(function(jqXHR) {
-        _stopElapsedTimer();
         $('#ai_progress_panel').hide();
         $('#ai_result_panel').show();
         $('#ai_result_success').hide();
@@ -198,68 +194,18 @@ function runAiAnalysis() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Display result                                                    */
+/*  Show submission confirmation                                      */
 /* ------------------------------------------------------------------ */
-function _showResult(resp) {
-    $('#ai_progress_panel').hide();
+function _showSubmitted(modelName) {
     $('#ai_result_panel').show();
-
-    if (resp.status === 'error') {
-        $('#ai_result_success').hide();
-        $('#ai_result_error').show();
-        $('#ai_result_error_msg').text(resp.error || 'Unknown error');
-        $('#btn_run_ai_analysis').prop('disabled', false);
-        return;
-    }
-
     $('#ai_result_error').hide();
     $('#ai_result_success').show();
     $('#btn_run_ai_analysis').hide();
-
-    $('#ai_result_summary').text(resp.summary || 'Analysis completed.');
-
-    var risk = resp.risk_level || '-';
-    var score = (resp.risk_score != null) ? resp.risk_score + '/100' : '';
-    $('#ai_result_risk').text(risk + (score ? ' (' + score + ')' : ''));
-
-    var dur = resp.duration_seconds;
-    if (dur != null) {
-        var m = Math.floor(dur / 60);
-        var s = Math.round(dur % 60);
-        $('#ai_result_duration').text(m + 'm ' + s + 's');
-    } else {
-        $('#ai_result_duration').text('-');
-    }
-
-    var usage = resp.usage || {};
-    $('#ai_result_input_tokens').text(
-        (usage.input_tokens != null) ? usage.input_tokens.toLocaleString() : '-'
-    );
-    $('#ai_result_output_tokens').text(
-        (usage.output_tokens != null) ? usage.output_tokens.toLocaleString() : '-'
-    );
-    $('#ai_result_tool_calls').text(
-        (usage.tool_calls != null) ? usage.tool_calls : '-'
+    $('#ai_result_summary').html(
+        '<strong>' + $('<span>').text(modelName).html() + '</strong> is now analyzing this case.' +
+        '<br><br>You can close this dialog and continue working. ' +
+        'When complete, findings will appear in the <strong>Notes</strong> section ' +
+        'and a task will be updated in <strong>Tasks</strong>.'
     );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Elapsed-time ticker                                               */
-/* ------------------------------------------------------------------ */
-function _startElapsedTimer() {
-    _elapsedStart = Date.now();
-    $('#ai_elapsed_timer').text('0:00');
-    _elapsedInterval = setInterval(function () {
-        var secs = Math.floor((Date.now() - _elapsedStart) / 1000);
-        var m = Math.floor(secs / 60);
-        var s = secs % 60;
-        $('#ai_elapsed_timer').text(m + ':' + (s < 10 ? '0' : '') + s);
-    }, 1000);
-}
-
-function _stopElapsedTimer() {
-    if (_elapsedInterval) {
-        clearInterval(_elapsedInterval);
-        _elapsedInterval = null;
-    }
-}
