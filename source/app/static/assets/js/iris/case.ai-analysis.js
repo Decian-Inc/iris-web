@@ -4,32 +4,44 @@ var LS_MODEL_KEY  = 'iris_ai_analysis_last_model';
 var LS_TIER_KEY   = 'iris_ai_analysis_last_tier';
 var LS_TENANT_KEY = 'iris_ai_analysis_last_tenant';
 
+var _cachedModelData = null;
 
 /* ------------------------------------------------------------------ */
 /*  Entry point — called by the toolbar button                        */
 /* ------------------------------------------------------------------ */
 function openAiAnalysisModal() {
-    $('#ai_models_loading').show();
     $('#ai_models_error').hide();
-    $('#ai_form_panel').hide();
     $('#ai_progress_panel').hide();
     $('#ai_result_panel').hide();
     $('#ai_result_success').hide();
     $('#ai_result_error').hide();
     $('#btn_run_ai_analysis').prop('disabled', false).show();
     $('#modal_ai_analysis').modal('show');
-    _loadModels();
+
+    if (_cachedModelData) {
+        $('#ai_models_loading').hide();
+        _populateModelSelect(_cachedModelData);
+        _restorePreferences(_cachedModelData);
+        $('#ai_form_panel').show();
+    } else {
+        $('#ai_models_loading').show();
+        $('#ai_form_panel').hide();
+        _loadModels();
+    }
 }
 
 /* ------------------------------------------------------------------ */
 /*  Fetch models via IRIS proxy                                       */
 /* ------------------------------------------------------------------ */
 function _loadModels(forceRefresh) {
+    $('#ai_models_loading').show();
+    $('#ai_form_panel').hide();
     var uri = '/case/ai/models' + (forceRefresh ? '&refresh=1' : '');
     get_request_api(uri)
     .done(function(data) {
         $('#ai_models_loading').hide();
         if (data.status === 'success' && data.data) {
+            _cachedModelData = data.data;
             _populateModelSelect(data.data);
             _restorePreferences(data.data);
             $('#ai_form_panel').show();
