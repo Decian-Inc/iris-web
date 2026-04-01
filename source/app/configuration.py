@@ -474,6 +474,7 @@ class Config:
         OIDC_MAPPING_EMAIL = config.load('OIDC', 'MAPPING_EMAIL', fallback='email')
 
     POSTPROCESSOR_URL = config.load('IRIS', 'POSTPROCESSOR_URL', fallback='')
+    AISOCAGENT_URL = config.load('IRIS', 'AISOCAGENT_URL', fallback='')
 
     """ Caching 
     """

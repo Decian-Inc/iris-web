@@ -1,6 +1,5 @@
-/* AI Analysis modal logic — talks to the aisocagent REST API */
+/* AI Analysis modal logic — proxied through IRIS Flask backend */
 
-var AI_AGENT_BASE = 'http://aisocagent:8000';
 var LS_MODEL_KEY  = 'iris_ai_analysis_last_model';
 var LS_TIER_KEY   = 'iris_ai_analysis_last_tier';
 var LS_TENANT_KEY = 'iris_ai_analysis_last_tenant';
@@ -25,28 +24,28 @@ function openAiAnalysisModal() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Fetch models from the agent                                       */
+/*  Fetch models via IRIS proxy                                       */
 /* ------------------------------------------------------------------ */
 function _loadModels() {
-    $.ajax({
-        url: AI_AGENT_BASE + '/api/v1/models',
-        type: 'GET',
-        dataType: 'json',
-        timeout: 15000,
-        success: function (data) {
-            $('#ai_models_loading').hide();
-            _populateModelSelect(data);
-            _restorePreferences(data);
+    get_request_api('/case/ai/models')
+    .done(function(data) {
+        $('#ai_models_loading').hide();
+        if (data.status === 'success' && data.data) {
+            _populateModelSelect(data.data);
+            _restorePreferences(data.data);
             $('#ai_form_panel').show();
-        },
-        error: function (jqXHR) {
-            $('#ai_models_loading').hide();
-            var msg = 'Unable to reach AI Agent at ' + AI_AGENT_BASE;
-            if (jqXHR.responseJSON && jqXHR.responseJSON.detail) {
-                msg += ': ' + jqXHR.responseJSON.detail;
-            }
+        } else {
+            var msg = data.message || 'Failed to load AI models';
             $('#ai_models_error').text(msg).show();
         }
+    })
+    .fail(function(jqXHR) {
+        $('#ai_models_loading').hide();
+        var msg = 'Unable to reach AI Agent service';
+        if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+            msg = jqXHR.responseJSON.message;
+        }
+        $('#ai_models_error').text(msg).show();
     });
 }
 
@@ -135,7 +134,7 @@ function _savePreferences() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Submit analysis request                                           */
+/*  Submit analysis request via IRIS proxy                            */
 /* ------------------------------------------------------------------ */
 function runAiAnalysis() {
     var modelVal = $('#ai_model_select').val();
@@ -150,15 +149,12 @@ function runAiAnalysis() {
     var provider = parts[0];
     var modelId  = parts.slice(1).join('::');
 
-    var $ctx    = $('#ai_case_context');
-    var caseId  = parseInt($ctx.data('case-id'), 10);
-
     var payload = {
-        case_id:   caseId,
         tenant_id: tenantId,
         tier:      $('#ai_tier_select').val() || 'standard',
         provider:  provider,
-        model:     modelId
+        model:     modelId,
+        csrf_token: $('#csrf_token').val()
     };
 
     var directive = $('#ai_directive').val().trim();
@@ -170,32 +166,34 @@ function runAiAnalysis() {
     $('#ai_progress_panel').show();
     _startElapsedTimer();
 
-    $.ajax({
-        url: AI_AGENT_BASE + '/api/v1/analyze',
-        type: 'POST',
-        data: JSON.stringify(payload),
-        contentType: 'application/json;charset=UTF-8',
-        dataType: 'json',
-        timeout: 900000,
-        success: function (resp) {
-            _stopElapsedTimer();
-            _showResult(resp);
-        },
-        error: function (jqXHR) {
-            _stopElapsedTimer();
+    post_request_api('/case/ai/analyze', JSON.stringify(payload))
+    .done(function(data) {
+        _stopElapsedTimer();
+        if (data.status === 'success' && data.data) {
+            _showResult(data.data);
+        } else {
             $('#ai_progress_panel').hide();
             $('#ai_result_panel').show();
             $('#ai_result_success').hide();
             $('#ai_result_error').show();
-            var msg = 'Request failed';
-            if (jqXHR.responseJSON && jqXHR.responseJSON.detail) {
-                msg = jqXHR.responseJSON.detail;
-            } else if (jqXHR.statusText) {
-                msg += ': ' + jqXHR.statusText;
-            }
-            $('#ai_result_error_msg').text(msg);
+            $('#ai_result_error_msg').text(data.message || 'Analysis failed');
             $('#btn_run_ai_analysis').prop('disabled', false);
         }
+    })
+    .fail(function(jqXHR) {
+        _stopElapsedTimer();
+        $('#ai_progress_panel').hide();
+        $('#ai_result_panel').show();
+        $('#ai_result_success').hide();
+        $('#ai_result_error').show();
+        var msg = 'Request failed';
+        if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+            msg = jqXHR.responseJSON.message;
+        } else if (jqXHR.statusText) {
+            msg += ': ' + jqXHR.statusText;
+        }
+        $('#ai_result_error_msg').text(msg);
+        $('#btn_run_ai_analysis').prop('disabled', false);
     });
 }
 

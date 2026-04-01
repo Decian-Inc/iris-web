@@ -69,6 +69,7 @@ from app.schema.marshables import TaskLogSchema, CaseSchema, CaseDetailsSchema
 from app.util import ac_api_case_requires, add_obj_history_entry
 from app.util import ac_case_requires
 from app.util import ac_socket_requires
+from app.iris_engine.utils.aisocagent import aisocagent_get, aisocagent_post
 from app.iris_engine.utils.postprocessor import postprocessor_get, postprocessor_post
 from app.util import response_error
 from app.util import response_success
@@ -513,3 +514,41 @@ def case_exception_list(caseid):
     resp_data = resp.json()
     error_msg = resp_data.get('detail', resp_data.get('message', 'Unknown error from postprocessor'))
     return response_error(f'Postprocessor error: {error_msg}')
+
+
+@case_blueprint.route('/case/ai/models', methods=['GET'])
+@ac_api_case_requires(CaseAccessLevel.read_only, CaseAccessLevel.full_access)
+def case_ai_models(caseid):
+    resp, err = aisocagent_get('/api/v1/models')
+    if err:
+        return err
+
+    if resp.status_code == 200:
+        return response_success("AI models fetched", data=resp.json())
+
+    resp_data = resp.json() if resp.headers.get('content-type', '').startswith('application/json') else {}
+    error_msg = resp_data.get('detail', resp_data.get('message', 'Unknown error from AI SOC Agent'))
+    return response_error(f'AI SOC Agent error: {error_msg}')
+
+
+@case_blueprint.route('/case/ai/analyze', methods=['POST'])
+@ac_api_case_requires(CaseAccessLevel.full_access)
+def case_ai_analyze(caseid):
+    js_data = request.get_json()
+    if not js_data:
+        return response_error('Invalid request data')
+
+    js_data['case_id'] = caseid
+
+    resp, err = aisocagent_post('/api/v1/analyze', json_data=js_data)
+    if err:
+        return err
+
+    resp_data = resp.json() if resp.headers.get('content-type', '').startswith('application/json') else {}
+
+    if resp.status_code == 200:
+        track_activity("performed AI analysis via SOC agent", caseid)
+        return response_success("AI analysis complete", data=resp_data)
+
+    error_msg = resp_data.get('detail', resp_data.get('error', 'Unknown error from AI SOC Agent'))
+    return response_error(f'AI SOC Agent error: {error_msg}')
