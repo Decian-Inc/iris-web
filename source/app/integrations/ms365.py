@@ -15,6 +15,7 @@
 
 import logging as log
 import requests
+from typing import Union, Optional
 
 from app.models.integrations import IntegrationConfig
 from app.models.ms365_recipients import MS365NotificationRecipient
@@ -24,7 +25,7 @@ _TOKEN_URL = 'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token'
 _SEND_MAIL_URL = 'https://graph.microsoft.com/v1.0/users/{from_email}/sendMail'
 
 
-def _load_auth_config() -> dict | None:
+def _load_auth_config() -> Optional[dict]:
     record = IntegrationConfig.query.filter_by(integration_type='ms365').first()
     if not record or not record.enabled:
         return None
@@ -42,7 +43,7 @@ def _load_auth_config() -> dict | None:
     return config
 
 
-def _get_access_token(tenant_id: str, client_id: str, client_secret: str) -> str | None:
+def _get_access_token(tenant_id: str, client_id: str, client_secret: str) -> Optional[str]:
     try:
         response = requests.post(
             _TOKEN_URL.format(tenant_id=tenant_id),
