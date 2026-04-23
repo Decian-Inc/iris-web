@@ -119,6 +119,11 @@
                                     <i class="fas fa-shield-alt mr-1"></i>FortiGate
                                 </a>
                             </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" id="ms365-tab" data-toggle="pill" href="#ms365" role="tab">
+                                    <i class="fas fa-envelope mr-1"></i>Microsoft 365
+                                </a>
+                            </li>
                         </ul>
 
                         <!-- Tab Content -->
@@ -260,6 +265,30 @@
                                                             <li><i class="fas fa-check text-success mr-2"></i>Multi-VDOM environment support</li>
                                                         </ul>
                                                         <span class="badge badge-primary">3 Playbooks Available</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="section-divider"></div>
+                                        <h4 class="mt-4"><i class="fas fa-bell text-primary mr-2"></i>Notification Integrations</h4>
+                                        <p>Integrations that automatically notify your team when key events occur in IRIS.</p>
+
+                                        <div class="row mt-4">
+                                            <div class="col-md-6">
+                                                <div class="card" style="border-color: #0078d4;">
+                                                    <div class="card-header text-white" style="background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);">
+                                                        <h5 class="mb-0"><i class="fas fa-envelope mr-2"></i>Microsoft 365 Integration</h5>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <p>Automated email and Teams notifications when new cases are created.</p>
+                                                        <ul class="list-unstyled">
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Email notifications via Microsoft Graph</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Teams channel notifications via webhook</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Per-recipient enable/disable control</li>
+                                                            <li><i class="fas fa-check text-success mr-2"></i>Credentials encrypted at rest</li>
+                                                        </ul>
+                                                        <span class="badge" style="background-color: #0078d4; color: white;">Event-Driven Notification</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1271,6 +1300,125 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Microsoft 365 Tab -->
+                            <div class="tab-pane fade" id="ms365" role="tabpanel">
+                                <div class="integration-card">
+                                    <div class="integration-header" style="background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);">
+                                        <h3><i class="fas fa-envelope mr-2"></i>Microsoft 365 Integration</h3>
+                                        <p class="mb-0">Automated notifications via Microsoft Graph API</p>
+                                    </div>
+                                    <div class="p-4">
+
+                                        <h5><i class="fas fa-info-circle text-primary mr-2"></i>About This Integration</h5>
+                                        <p>The Microsoft 365 integration sends notifications to your team whenever a new case is created in IRIS.
+                                        You can enable email notifications, Teams notifications, or both independently. Each channel maintains
+                                        its own recipient list — addresses and channels can be added, removed, or temporarily disabled at any
+                                        time without affecting the other channel or requiring reconfiguration.</p>
+
+                                        <div class="section-divider"></div>
+
+                                        <h5><i class="fas fa-list-ol text-primary mr-2"></i>Azure Setup (Done Once Per Deployment)</h5>
+
+                                        <div class="playbook-item">
+                                            <strong>Step 1 — Register an Azure AD Application</strong>
+                                            <ol class="mt-2">
+                                                <li>Sign into <strong>portal.azure.com</strong> as a Global Administrator</li>
+                                                <li>Navigate to <strong>Azure Active Directory → App registrations → New registration</strong></li>
+                                                <li>Name it (e.g. <em>IRIS Case Notifications</em>), set account type to <strong>this directory only</strong>, leave redirect URI blank</li>
+                                                <li>Copy the <strong>Application (client) ID</strong> and <strong>Directory (tenant) ID</strong></li>
+                                            </ol>
+                                        </div>
+
+                                        <div class="playbook-item forensics">
+                                            <strong>Step 2 — Configure API Permissions</strong>
+                                            <ol class="mt-2">
+                                                <li>Go to <strong>API permissions → Add a permission → Microsoft Graph → Application permissions</strong></li>
+                                                <li>Add <code>Mail.Send</code> for email notifications</li>
+                                                <li>Add <code>ChannelMessage.Send</code> only if using Graph API for Teams (not needed for webhook approach)</li>
+                                                <li>Click <strong>Grant admin consent for [your tenant]</strong></li>
+                                            </ol>
+                                        </div>
+
+                                        <div class="playbook-item scanning">
+                                            <strong>Step 3 — Create a Client Secret</strong>
+                                            <ol class="mt-2">
+                                                <li>Go to <strong>Certificates &amp; secrets → New client secret</strong></li>
+                                                <li>Set expiry (12 or 24 months recommended)</li>
+                                                <li>Copy the <strong>Value immediately</strong> — it will not be shown again</li>
+                                            </ol>
+                                        </div>
+
+                                        <div class="playbook-item" style="border-left-color: #0078d4;">
+                                            <strong>Step 4 — Teams Webhook URL (Simpler Teams Option)</strong>
+                                            <ol class="mt-2">
+                                                <li>In Teams, open target channel → <strong>⋯ → Connectors → Incoming Webhook</strong></li>
+                                                <li>Name it and copy the webhook URL</li>
+                                                <li>Paste it into the Teams Channels list in IRIS</li>
+                                            </ol>
+                                            <small class="text-muted">This approach requires no Azure API permissions and no Teams app installation.</small>
+                                        </div>
+
+                                        <div class="section-divider"></div>
+
+                                        <h5><i class="fas fa-cog text-primary mr-2"></i>Configuring in IRIS</h5>
+                                        <p>Go to <strong>Manage → Integrations → Microsoft 365</strong> and complete the following:</p>
+
+                                        <div class="row mt-3">
+                                            <div class="col-md-6">
+                                                <div class="card border-secondary mb-3">
+                                                    <div class="card-header bg-secondary text-white">1. Authentication</div>
+                                                    <div class="card-body">
+                                                        <ul class="list-unstyled mb-0">
+                                                            <li><strong>Tenant ID</strong> — Directory (tenant) ID from Azure AD</li>
+                                                            <li><strong>Client ID</strong> — Application (client) ID</li>
+                                                            <li><strong>Client Secret</strong> — Secret value from Certificates &amp; Secrets</li>
+                                                        </ul>
+                                                        <small class="text-muted mt-2 d-block">Click Test Connection to validate before saving</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="card border-secondary mb-3">
+                                                    <div class="card-header bg-secondary text-white">2. Notification Channels</div>
+                                                    <div class="card-body">
+                                                        <ul class="list-unstyled mb-0">
+                                                            <li><strong>Enable Email</strong> — toggle + set from address</li>
+                                                            <li><strong>Add email recipients</strong> — one address at a time</li>
+                                                            <li><strong>Enable Teams</strong> — toggle</li>
+                                                            <li><strong>Add Teams channels</strong> — one webhook URL at a time</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="section-divider"></div>
+
+                                        <h5><i class="fas fa-users text-primary mr-2"></i>Managing Recipients</h5>
+                                        <p>Recipients for each channel are managed independently in a live list:</p>
+                                        <ul>
+                                            <li><strong>Add</strong> — enter an address or URL and click Add. It is saved immediately.</li>
+                                            <li><strong>Disable</strong> — temporarily stops notifications to that recipient without removing them. Re-enable at any time.</li>
+                                            <li><strong>Remove</strong> — permanently removes the recipient.</li>
+                                        </ul>
+                                        <p>Adding a Teams channel later does not affect any email recipients, and vice versa. Each list is fully independent.</p>
+
+                                        <div class="section-divider"></div>
+
+                                        <h5><i class="fas fa-shield-alt text-primary mr-2"></i>Security Notes</h5>
+                                        <ul>
+                                            <li>The client secret and all Teams webhook URLs are <strong>encrypted at rest</strong> using AES-128 encryption</li>
+                                            <li>Neither the client secret nor webhook URLs are ever returned to the browser after saving</li>
+                                            <li>Access tokens from Microsoft Graph are used immediately and never stored</li>
+                                            <li>Only IRIS server administrators can view or modify this configuration</li>
+                                            <li>If <code>IRIS_SECRET_KEY</code> is ever rotated, credentials and webhook URLs will need to be re-entered once</li>
+                                        </ul>
+
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>

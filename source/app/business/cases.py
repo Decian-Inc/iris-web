@@ -22,6 +22,7 @@ import traceback
 from flask_login import current_user
 
 from marshmallow.exceptions import ValidationError
+from app.integrations.ms365 import notify_case_created
 
 from app.schema.marshables import CaseSchema
 
@@ -104,6 +105,11 @@ def create(request_json):
 
         # TODO remove caseid doesn't seems to be useful for call_modules_hook => remove argument
         case = call_modules_hook('on_postload_case_create', case, None)
+
+        try:
+            notify_case_created(case)
+        except Exception as e:
+            log.error(f'MS365 notification failed for case {case.case_id}: {e}')
 
         add_obj_history_entry(case, 'created')
         track_activity(f'new case "{case.name}" created', caseid=case.case_id, ctx_less=False)

@@ -35,6 +35,8 @@ from app.models.integrations import IntegrationConfig
 from app.util import ac_requires
 from app.util import response_success, response_error
 from app.iris_engine.utils.tracker import track_activity
+from app.util_crypto import encrypt_field, decrypt_field
+from app.models.ms365_recipients import MS365NotificationRecipient
 
 manage_integrations_blueprint = Blueprint('manage_integrations',
                                         __name__,
@@ -133,6 +135,8 @@ def test_integration_connection(caseid, url_redir):
             result = test_haveibeenpwned_connection(config)
         elif integration_type == 'fortigate':
             result = test_fortigate_connection(config)
+        elif integration_type == 'ms365':
+            result = test_ms365_connection(config)
         else:
             return response_error("Unsupported integration type")
 
@@ -219,6 +223,15 @@ def get_integrations_config():
                 'api_version': 'v2',
                 'vdom': 'root',
                 'quarantine_duration': 3600
+            },
+            'ms365': {
+                'enabled': False,
+                'tenant_id': '',
+                'client_id': '',
+                'client_secret': '',
+                'from_email': '',
+                'send_email': False,
+                'send_teams': False
             }
         }
 
@@ -226,6 +239,10 @@ def get_integrations_config():
         for integration_type, default_config in default_configs.items():
             if integration_type not in result:
                 result[integration_type] = default_config
+
+        # Apply masking for MS365 config
+        if 'ms365' in result:
+            result['ms365'] = _mask_ms365_config(result['ms365'])
 
         return result
 
@@ -250,6 +267,27 @@ def get_integrations_config():
         }
 
 
+def _merge_ms365_config(incoming: dict, existing: dict) -> dict:
+    merged = dict(existing)
+
+    for field in ('enabled', 'tenant_id', 'client_id', 'from_email', 'send_email', 'send_teams'):
+        if field in incoming:
+            merged[field] = incoming[field]
+
+    new_secret = incoming.get('client_secret', '')
+    if new_secret and new_secret != 'configured':
+        merged['client_secret'] = encrypt_field(new_secret)
+
+    return merged
+
+
+def _mask_ms365_config(config: dict) -> dict:
+    masked = dict(config)
+    if masked.get('client_secret'):
+        masked['client_secret'] = 'configured'
+    return masked
+
+
 def save_integrations_config(integration_type, config):
     """
     Save integration configuration to database
@@ -261,14 +299,23 @@ def save_integrations_config(integration_type, config):
         if integration_config:
             # Update existing record
             integration_config.enabled = config.get('enabled', False)
-            integration_config.config_data = {k: v for k, v in config.items() if k != 'enabled'}
+            if integration_type == 'ms365':
+                existing_data = integration_config.config_data or {}
+                config_data_to_save = _merge_ms365_config(config, existing_data)
+            else:
+                config_data_to_save = {k: v for k, v in config.items() if k != 'enabled'}
+            integration_config.config_data = config_data_to_save
             integration_config.updated_by = current_user.name if current_user.is_authenticated else 'system'
         else:
             # Create new record
+            if integration_type == 'ms365':
+                config_data_to_save = _merge_ms365_config(config, {})
+            else:
+                config_data_to_save = {k: v for k, v in config.items() if k != 'enabled'}
             integration_config = IntegrationConfig(
                 integration_type=integration_type,
                 enabled=config.get('enabled', False),
-                config_data={k: v for k, v in config.items() if k != 'enabled'},
+                config_data=config_data_to_save,
                 created_by=current_user.name if current_user.is_authenticated else 'system',
                 updated_by=current_user.name if current_user.is_authenticated else 'system'
             )
@@ -863,3 +910,160 @@ def test_fortigate_connection(config):
         return {'success': False, 'message': 'Connection failed - check network connectivity and FortiGate IP'}
     except Exception as e:
         return {'success': False, 'message': f'Connection test failed: {str(e)}'}
+
+
+def test_ms365_connection(config: dict) -> dict:
+    tenant_id = config.get('tenant_id', '').strip()
+    client_id = config.get('client_id', '').strip()
+    client_secret = config.get('client_secret', '').strip()
+
+    if not all([tenant_id, client_id, client_secret]):
+        return {'success': False, 'message': 'tenant_id, client_id, and client_secret are all required'}
+
+    if client_secret == 'configured':
+        existing = IntegrationConfig.query.filter_by(integration_type='ms365').first()
+        if not existing or not existing.config_data:
+            return {'success': False, 'message': 'No stored secret found — enter a new client secret'}
+        try:
+            client_secret = decrypt_field(existing.config_data.get('client_secret', ''))
+        except Exception:
+            return {'success': False, 'message': 'Stored secret could not be decrypted — re-enter it'}
+
+    try:
+        response = requests.post(
+            f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token',
+            data={
+                'grant_type': 'client_credentials',
+                'client_id': client_id,
+                'client_secret': client_secret,
+                'scope': 'https://graph.microsoft.com/.default'
+            },
+            timeout=10
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            return {
+                'success': True,
+                'message': 'Successfully authenticated with Microsoft Graph',
+                'tenant_id': tenant_id,
+                'token_expires_in': data.get('expires_in')
+            }
+
+        error = response.json()
+        return {
+            'success': False,
+            'message': f'Authentication failed: {error.get("error_description", response.text)}'
+        }
+
+    except requests.exceptions.Timeout:
+        return {'success': False, 'message': 'Connection timed out reaching login.microsoftonline.com'}
+    except Exception as e:
+        return {'success': False, 'message': f'Connection test failed: {str(e)}'}
+
+
+@manage_integrations_blueprint.route('/manage/integrations/ms365/recipients', methods=['GET'])
+@login_required
+@ac_requires(Permissions.server_administrator, no_cid_required=True)
+def ms365_list_recipients(caseid, url_redir):
+    if url_redir:
+        return redirect(url_for('manage_integrations.manage_integrations_index', cid=caseid))
+
+    rows = MS365NotificationRecipient.query.order_by(
+        MS365NotificationRecipient.channel_type,
+        MS365NotificationRecipient.id
+    ).all()
+
+    result = []
+    for row in rows:
+        display_address = row.address
+        if row.channel_type == 'teams':
+            display_address = 'configured'
+
+        result.append({
+            'id': row.id,
+            'channel_type': row.channel_type,
+            'address': display_address,
+            'display_name': row.display_name or '',
+            'enabled': row.enabled,
+            'created_by': row.created_by or '',
+            'created_at': row.created_at.isoformat() if row.created_at else ''
+        })
+
+    return response_success('', data=result)
+
+
+@manage_integrations_blueprint.route('/manage/integrations/ms365/recipients/add', methods=['POST'])
+@login_required
+@ac_requires(Permissions.server_administrator, no_cid_required=True)
+def ms365_add_recipient(caseid, url_redir):
+    if url_redir:
+        return redirect(url_for('manage_integrations.manage_integrations_index', cid=caseid))
+
+    data = request.get_json()
+    channel_type = data.get('channel_type', '').strip()
+    address = data.get('address', '').strip()
+    display_name = data.get('display_name', '').strip()
+
+    if channel_type not in ('email', 'teams'):
+        return response_error('channel_type must be email or teams')
+
+    if not address:
+        return response_error('address is required')
+
+    stored_address = encrypt_field(address) if channel_type == 'teams' else address
+
+    recipient = MS365NotificationRecipient(
+        channel_type=channel_type,
+        address=stored_address,
+        display_name=display_name or None,
+        enabled=True,
+        created_by=current_user.name if current_user.is_authenticated else 'system'
+    )
+    db.session.add(recipient)
+    db.session.commit()
+
+    track_activity(f'MS365 {channel_type} recipient added', caseid=None)
+
+    return response_success('Recipient added', data={
+        'id': recipient.id,
+        'channel_type': recipient.channel_type,
+        'address': 'configured' if channel_type == 'teams' else address,
+        'display_name': recipient.display_name or '',
+        'enabled': recipient.enabled
+    })
+
+
+@manage_integrations_blueprint.route('/manage/integrations/ms365/recipients/<int:recipient_id>', methods=['DELETE'])
+@login_required
+@ac_requires(Permissions.server_administrator, no_cid_required=True)
+def ms365_remove_recipient(caseid, url_redir, recipient_id):
+    if url_redir:
+        return redirect(url_for('manage_integrations.manage_integrations_index', cid=caseid))
+
+    recipient = MS365NotificationRecipient.query.get(recipient_id)
+    if not recipient:
+        return response_error('Recipient not found')
+
+    db.session.delete(recipient)
+    db.session.commit()
+
+    track_activity(f'MS365 {recipient.channel_type} recipient removed', caseid=None)
+    return response_success('Recipient removed')
+
+
+@manage_integrations_blueprint.route('/manage/integrations/ms365/recipients/<int:recipient_id>/toggle', methods=['PATCH'])
+@login_required
+@ac_requires(Permissions.server_administrator, no_cid_required=True)
+def ms365_toggle_recipient(caseid, url_redir, recipient_id):
+    if url_redir:
+        return redirect(url_for('manage_integrations.manage_integrations_index', cid=caseid))
+
+    recipient = MS365NotificationRecipient.query.get(recipient_id)
+    if not recipient:
+        return response_error('Recipient not found')
+
+    recipient.enabled = not recipient.enabled
+    db.session.commit()
+
+    return response_success('Recipient updated', data={'id': recipient.id, 'enabled': recipient.enabled})

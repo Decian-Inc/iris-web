@@ -71,6 +71,22 @@
         .fortigate-icon {
             color: #e74c3c;
         }
+        .ms365-icon {
+            color: #0078d4;
+        }
+        .recipient-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 10px;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            background: #f8f9fa;
+        }
+        .recipient-row.disabled-recipient {
+            opacity: 0.5;
+        }
         .toggle-container {
             margin: 15px 0;
         }
@@ -765,6 +781,183 @@
                                             </form>
                                         </div>
                                     </div>
+
+                                    <!-- Microsoft 365 Integration -->
+                                    <div class="integration-card">
+                                        <div class="integration-header">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-envelope ms365-icon integration-icon"></i>
+                                                    <div>
+                                                        <h5 class="mb-1">Microsoft 365</h5>
+                                                        <small class="text-muted">Email and Teams notifications on case creation via Microsoft Graph API</small>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <span class="status-badge {% if integrations.ms365.enabled %}status-enabled{% else %}status-disabled{% endif %}" id="ms365-status-badge">
+                                                        {% if integrations.ms365.enabled %}Enabled{% else %}Disabled{% endif %}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="integration-body">
+                                            <form id="ms365-form">
+
+                                                <!-- Enable toggle -->
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <div class="form-group">
+                                                            <div class="custom-control custom-switch">
+                                                                <input type="checkbox" class="custom-control-input" id="ms365-enabled"
+                                                                       {% if integrations.ms365.enabled %}checked{% endif %}>
+                                                                <label class="custom-control-label" for="ms365-enabled">
+                                                                    Enable Microsoft 365 integration
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Auth credentials -->
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label for="ms365-tenant-id">Tenant ID <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" id="ms365-tenant-id"
+                                                                   placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                                                                   value="{{ integrations.ms365.tenant_id }}">
+                                                            <small class="form-text text-muted">Directory (tenant) ID from Azure AD</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label for="ms365-client-id">Client ID <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" id="ms365-client-id"
+                                                                   placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                                                                   value="{{ integrations.ms365.client_id }}">
+                                                            <small class="form-text text-muted">Application (client) ID from Azure AD</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label for="ms365-client-secret">Client Secret <span class="text-danger">*</span></label>
+                                                            <input type="password" class="form-control" id="ms365-client-secret"
+                                                                   placeholder="{% if integrations.ms365.client_secret == 'configured' %}Enter new value to replace{% else %}Enter client secret{% endif %}">
+                                                            <small class="form-text text-muted">
+                                                                {% if integrations.ms365.client_secret == 'configured' %}
+                                                                    <span class="text-success"><i class="fas fa-lock mr-1"></i>Secret saved and encrypted</span>
+                                                                {% else %}
+                                                                    Client secret from Azure AD Certificates &amp; Secrets
+                                                                {% endif %}
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <hr>
+
+                                                <!-- Email channel -->
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <div class="custom-control custom-switch mb-3">
+                                                            <input type="checkbox" class="custom-control-input" id="ms365-send-email"
+                                                                   {% if integrations.ms365.send_email %}checked{% endif %}>
+                                                            <label class="custom-control-label" for="ms365-send-email">
+                                                                <strong>Send email notifications on new case</strong>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div id="ms365-email-section" {% if not integrations.ms365.send_email %}style="display:none;"{% endif %}>
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <div class="form-group">
+                                                                <label for="ms365-from-email">From Email Address <span class="text-danger">*</span></label>
+                                                                <input type="email" class="form-control" id="ms365-from-email"
+                                                                       placeholder="iris-notifications@yourdomain.com"
+                                                                       value="{{ integrations.ms365.from_email }}">
+                                                                <small class="form-text text-muted">Mailbox the app has Mail.Send permission on</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="row">
+                                                        <div class="col-md-8">
+                                                            <label>Email Recipients</label>
+                                                            <div id="ms365-email-recipients-list" class="mb-2">
+                                                                <div class="text-muted small"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                                                            </div>
+                                                            <div class="input-group input-group-sm">
+                                                                <input type="email" class="form-control" id="ms365-new-email-address"
+                                                                       placeholder="analyst@company.com">
+                                                                <input type="text" class="form-control" id="ms365-new-email-name"
+                                                                       placeholder="Display name (optional)">
+                                                                <div class="input-group-append">
+                                                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="ms365AddRecipient('email')">
+                                                                        <i class="fas fa-plus mr-1"></i>Add
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <hr>
+
+                                                <!-- Teams channel -->
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <div class="custom-control custom-switch mb-3">
+                                                            <input type="checkbox" class="custom-control-input" id="ms365-send-teams"
+                                                                   {% if integrations.ms365.send_teams %}checked{% endif %}>
+                                                            <label class="custom-control-label" for="ms365-send-teams">
+                                                                <strong>Send Teams notifications on new case</strong>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div id="ms365-teams-section" {% if not integrations.ms365.send_teams %}style="display:none;"{% endif %}>
+                                                    <div class="row">
+                                                        <div class="col-md-8">
+                                                            <label>Teams Channels</label>
+                                                            <div id="ms365-teams-recipients-list" class="mb-2">
+                                                                <div class="text-muted small"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                                                            </div>
+                                                            <div class="input-group input-group-sm">
+                                                                <input type="password" class="form-control" id="ms365-new-teams-url"
+                                                                       placeholder="https://outlook.office.com/webhook/...">
+                                                                <input type="text" class="form-control" id="ms365-new-teams-name"
+                                                                       placeholder="Channel name (optional)">
+                                                                <div class="input-group-append">
+                                                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="ms365AddRecipient('teams')">
+                                                                        <i class="fas fa-plus mr-1"></i>Add
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <small class="form-text text-muted">Webhook URL is encrypted after saving and cannot be retrieved</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <hr>
+
+                                                <!-- Actions -->
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <button type="button" class="btn btn-info btn-sm" onclick="testConnection('ms365')">
+                                                            <i class="fas fa-plug mr-1"></i>Test Connection
+                                                        </button>
+                                                        <button type="button" class="btn btn-success btn-sm ml-2" onclick="saveConfig('ms365')">
+                                                            <i class="fas fa-save mr-1"></i>Save Configuration
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div id="ms365-test-result" class="test-result" style="display: none;"></div>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -903,6 +1096,8 @@ function testConnection(integrationType) {
         resultDiv = document.getElementById('hibp-test-result');
     } else if (integrationType === 'fortigate') {
         resultDiv = document.getElementById('fortigate-test-result');
+    } else if (integrationType === 'ms365') {
+        resultDiv = document.getElementById('ms365-test-result');
     }
 
     // Show loading state
@@ -969,6 +1164,12 @@ function testConnection(integrationType) {
             }
             if (data.data.response_time) {
                 resultDiv.innerHTML += `<br><small>Response Time: ${data.data.response_time}</small>`;
+            }
+            if (data.data.tenant_id) {
+                resultDiv.innerHTML += `<br><small>Tenant ID: ${data.data.tenant_id}</small>`;
+            }
+            if (data.data.token_expires_in) {
+                resultDiv.innerHTML += `<br><small>Token expires in: ${data.data.token_expires_in}s</small>`;
             }
         } else {
             resultDiv.className = 'test-result test-error';
@@ -1072,6 +1273,16 @@ function getConfigFromForm(integrationType) {
             quarantine_duration: parseInt(document.getElementById('fortigate-quarantine-duration').value),
             verify_ssl: document.getElementById('fortigate-verify-ssl').checked
         };
+    } else if (integrationType === 'ms365') {
+        return {
+            enabled: document.getElementById('ms365-enabled').checked,
+            tenant_id: document.getElementById('ms365-tenant-id').value,
+            client_id: document.getElementById('ms365-client-id').value,
+            client_secret: document.getElementById('ms365-client-secret').value || 'configured',
+            from_email: document.getElementById('ms365-from-email').value,
+            send_email: document.getElementById('ms365-send-email').checked,
+            send_teams: document.getElementById('ms365-send-teams').checked
+        };
     }
 }
 
@@ -1104,5 +1315,129 @@ function showNotification(type, title, message) {
         notification.alert('close');
     }, 5000);
 }
+
+// MS365 recipient management
+
+function ms365LoadRecipients() {
+    fetch('/manage/integrations/ms365/recipients', {
+        method: 'GET',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status !== 'success') return;
+        const recipients = data.data;
+
+        const emailRows = recipients.filter(r => r.channel_type === 'email');
+        const teamsRows = recipients.filter(r => r.channel_type === 'teams');
+
+        ms365RenderRecipients('ms365-email-recipients-list', emailRows, 'email');
+        ms365RenderRecipients('ms365-teams-recipients-list', teamsRows, 'teams');
+    })
+    .catch(() => {});
+}
+
+function ms365RenderRecipients(containerId, recipients, channelType) {
+    const container = document.getElementById(containerId);
+    if (!recipients.length) {
+        container.innerHTML = `<div class="text-muted small">No ${channelType} recipients configured</div>`;
+        return;
+    }
+
+    container.innerHTML = recipients.map(r => `
+        <div class="recipient-row ${r.enabled ? '' : 'disabled-recipient'}" id="recipient-row-${r.id}">
+            <span>
+                <i class="fas fa-${channelType === 'email' ? 'envelope' : 'comments'} mr-2 text-muted"></i>
+                <strong>${r.display_name || r.address}</strong>
+                ${r.display_name ? `<small class="text-muted ml-2">${r.address}</small>` : ''}
+                ${!r.enabled ? '<span class="badge badge-secondary ml-2">Disabled</span>' : ''}
+            </span>
+            <span>
+                <button type="button" class="btn btn-xs btn-outline-secondary mr-1"
+                        onclick="ms365ToggleRecipient(${r.id})">
+                    ${r.enabled ? 'Disable' : 'Enable'}
+                </button>
+                <button type="button" class="btn btn-xs btn-outline-danger"
+                        onclick="ms365RemoveRecipient(${r.id})">
+                    <i class="fas fa-times"></i>
+                </button>
+            </span>
+        </div>
+    `).join('');
+}
+
+function ms365AddRecipient(channelType) {
+    const addressInput = document.getElementById(
+        channelType === 'email' ? 'ms365-new-email-address' : 'ms365-new-teams-url'
+    );
+    const nameInput = document.getElementById(
+        channelType === 'email' ? 'ms365-new-email-name' : 'ms365-new-teams-name'
+    );
+
+    const address = addressInput.value.trim();
+    const displayName = nameInput.value.trim();
+
+    if (!address) {
+        showNotification('error', 'Validation', 'Address is required');
+        return;
+    }
+
+    fetch('/manage/integrations/ms365/recipients/add', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({channel_type: channelType, address: address, display_name: displayName})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            addressInput.value = '';
+            nameInput.value = '';
+            ms365LoadRecipients();
+        } else {
+            showNotification('error', 'Error', data.message);
+        }
+    })
+    .catch(e => showNotification('error', 'Error', e.message));
+}
+
+function ms365RemoveRecipient(id) {
+    fetch(`/manage/integrations/ms365/recipients/${id}`, {method: 'DELETE'})
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            ms365LoadRecipients();
+        } else {
+            showNotification('error', 'Error', data.message);
+        }
+    })
+    .catch(e => showNotification('error', 'Error', e.message));
+}
+
+function ms365ToggleRecipient(id) {
+    fetch(`/manage/integrations/ms365/recipients/${id}/toggle`, {method: 'PATCH'})
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            ms365LoadRecipients();
+        } else {
+            showNotification('error', 'Error', data.message);
+        }
+    })
+    .catch(e => showNotification('error', 'Error', e.message));
+}
+
+// Show/hide sections based on toggles
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('ms365-send-email').addEventListener('change', function () {
+        document.getElementById('ms365-email-section').style.display = this.checked ? '' : 'none';
+    });
+    document.getElementById('ms365-send-teams').addEventListener('change', function () {
+        document.getElementById('ms365-teams-section').style.display = this.checked ? '' : 'none';
+    });
+
+    // Load recipients when page loads
+    ms365LoadRecipients();
+});
+
 </script>
 {% endblock javascripts %}
