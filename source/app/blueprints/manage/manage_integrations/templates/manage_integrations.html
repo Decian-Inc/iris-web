@@ -82,7 +82,10 @@
             border: 1px solid #e9ecef;
             border-radius: 4px;
             margin-bottom: 4px;
-            background: #f8f9fa;
+        }
+        .switch-label {
+            font-size: 0.875rem;
+            font-weight: 500;
         }
         .recipient-row.disabled-recipient {
             opacity: 0.5;
@@ -794,29 +797,18 @@
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <span class="status-badge {% if integrations.ms365.enabled %}status-enabled{% else %}status-disabled{% endif %}" id="ms365-status-badge">
-                                                        {% if integrations.ms365.enabled %}Enabled{% else %}Disabled{% endif %}
-                                                    </span>
+                                                    <div class="form-check form-switch d-inline-block">
+                                                        <input class="form-check-input" type="checkbox" id="ms365-enabled-header" name="ms365-enabled-header"
+                                                               {% if integrations.ms365.enabled %}checked{% endif %}>
+                                                        <label class="form-check-label" for="ms365-enabled-header">
+                                                            <span class="switch-label">Enabled</span>
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="integration-body">
                                             <form id="ms365-form">
-
-                                                <!-- Enable toggle -->
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <div class="form-group">
-                                                            <div class="custom-control custom-switch">
-                                                                <input type="checkbox" class="custom-control-input" id="ms365-enabled"
-                                                                       {% if integrations.ms365.enabled %}checked{% endif %}>
-                                                                <label class="custom-control-label" for="ms365-enabled">
-                                                                    Enable Microsoft 365 integration
-                                                                </label>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
 
                                                 <!-- Auth credentials -->
                                                 <div class="row">
@@ -1275,7 +1267,7 @@ function getConfigFromForm(integrationType) {
         };
     } else if (integrationType === 'ms365') {
         return {
-            enabled: document.getElementById('ms365-enabled').checked,
+            enabled: document.getElementById('ms365-enabled-header').checked,
             tenant_id: document.getElementById('ms365-tenant-id').value,
             client_id: document.getElementById('ms365-client-id').value,
             client_secret: document.getElementById('ms365-client-secret').value || 'configured',
