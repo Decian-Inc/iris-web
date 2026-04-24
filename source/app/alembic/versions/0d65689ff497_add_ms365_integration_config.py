@@ -8,7 +8,7 @@ from alembic import op
 import json
 
 revision = '0d65689ff497'
-down_revision = '0d65689ff496'
+down_revision = ('0d65689ff496', '6h7i8j9k0l1m')
 branch_labels = None
 depends_on = None
 
