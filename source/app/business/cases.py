@@ -33,11 +33,13 @@ from app.util import add_obj_history_entry
 
 from app.models.authorization import CaseAccessLevel
 from app.models.authorization import Permissions
+from app.models.authorization import UserClient
 from app.models import ReviewStatusList
 
 from app.iris_engine.module_handler.module_handler import call_modules_hook
 from app.iris_engine.utils.tracker import track_activity
 from app.iris_engine.access_control.utils import ac_set_new_case_access
+from app.iris_engine.access_control.utils import ac_auto_update_user_effective_access
 
 from app.datamgmt.case.case_db import save_case_tags
 from app.datamgmt.case.case_db import register_case_protagonists
@@ -164,9 +166,11 @@ def update(case_identifier, request_data):
         closed_state_id = get_case_state_by_name('Closed').state_id
 
         # If user tries to update the customer, check if the user has access to the new customer
+        old_client_id = None
         if request_data.get('case_customer') and request_data.get('case_customer') != case_i.client_id:
             if not user_has_client_access(current_user.id, request_data.get('case_customer')):
                 raise BusinessProcessingError('Invalid customer ID. Permission denied.')
+            old_client_id = case_i.client_id
 
         if 'case_name' in request_data:
             short_case_name = request_data.get('case_name').replace(f'#{case_i.case_id} - ', '')
@@ -178,6 +182,15 @@ def update(case_identifier, request_data):
         case = _load(request_data, instance=case_i, partial=True)
 
         db.session.commit()
+
+        if old_client_id:
+            affected_user_ids = {
+                uc.user_id for uc in UserClient.query.filter(
+                    UserClient.client_id.in_([old_client_id, case.client_id])
+                ).with_entities(UserClient.user_id).all()
+            }
+            for uid in affected_user_ids:
+                ac_auto_update_user_effective_access(uid)
 
         if previous_case_state != case.state_id:
             if case.state_id == closed_state_id:
