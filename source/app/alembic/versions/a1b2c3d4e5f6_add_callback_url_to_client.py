@@ -14,12 +14,7 @@ depends_on = None
 
 
 def upgrade():
-    conn = op.get_bind()
-    inspector = sa.inspect(conn)
-
-    existing_columns = [col['name'] for col in inspector.get_columns('client')]
-    if 'callback_url' not in existing_columns:
-        op.add_column('client', sa.Column('callback_url', sa.Text(), nullable=True))
+    op.execute(sa.text('ALTER TABLE client ADD COLUMN IF NOT EXISTS callback_url TEXT'))
 
 
 def downgrade():
