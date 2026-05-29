@@ -7,9 +7,11 @@ var from_sync = null;
 var _customer_callback_url = null;
 
 function _apply_wazuh_callback(target) {
+    console.log('[wazuh-cb] called, url=', _customer_callback_url, 'links=', $(target).find('a').length);
     if (!_customer_callback_url) { return; }
     $(target).find('a').each(function () {
         var text = $(this).text().trim();
+        console.log('[wazuh-cb] found link text:', JSON.stringify(text));
         if (text === 'View in Wazuh' || text === 'View Message in Wazuh') {
             var href = $(this).attr('href');
             if (!href) { return; }
@@ -19,7 +21,8 @@ function _apply_wazuh_callback(target) {
                 url.protocol = cb.protocol;
                 url.host     = cb.host;
                 $(this).attr('href', url.toString());
-            } catch (e) { /* malformed URL — leave unchanged */ }
+                console.log('[wazuh-cb] swapped to:', url.toString());
+            } catch (e) { console.warn('[wazuh-cb] URL parse error:', e); }
         }
     });
 }
@@ -614,8 +617,10 @@ $(document).ready(function() {
 
     get_request_api('/case/meta')
     .done(function (data) {
+        console.log('[wazuh-cb] /case/meta response:', data.status, data.data && data.data.client);
         if (data.status === 'success' && data.data && data.data.client) {
             var cb = data.data.client.customer_callback_url;
+            console.log('[wazuh-cb] customer_callback_url:', cb);
             if (cb) {
                 _customer_callback_url = cb;
                 _apply_wazuh_callback(document.getElementById('targetDiv'));
