@@ -423,11 +423,37 @@ function show_case_view(row_index) {
     let desc_body = $('<div/>').addClass('card-body');
     desc_body.append($('<h2/>').addClass('card-title mb-3').text('Summary'));
     let converter = get_showdown_convert();
-    let html = converter.makeHtml(case_data.description);
-    desc_body.append($('<div/>').addClass('card-text').html(html));
+    let html = converter.makeHtml(do_md_filter_xss(case_data.description));
+    let desc_div = $('<div/>').addClass('card-text').html(do_md_filter_xss(html));
+    desc_body.append(desc_div);
 
     desc_card.append(desc_body);
     body.append(desc_card);
+
+    get_request_api('/case/meta', false, null, case_data.case_id)
+    .done(function(data) {
+        if (data.status === 'success' && data.data && data.data.client) {
+            var cb = data.data.client.customer_callback_url;
+            if (cb) {
+                try {
+                    var cbUrl = new URL(cb);
+                    desc_div.find('a').each(function() {
+                        var text = $(this).text().trim();
+                        if (text === 'View in Wazuh' || text === 'View Message in Wazuh') {
+                            var href = $(this).attr('href');
+                            if (!href) { return; }
+                            try {
+                                var url = new URL(href);
+                                url.protocol = cbUrl.protocol;
+                                url.host = cbUrl.host;
+                                $(this).attr('href', url.toString());
+                            } catch(e) {}
+                        }
+                    });
+                } catch(e) {}
+            }
+        }
+    });
 
 
     $('#caseViewModal').modal('show');
