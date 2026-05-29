@@ -318,6 +318,7 @@ def view_customer_modal(client_id, caseid, url_redir):
     form.customer_name.render_kw = {'value': customer.name}
     form.customer_description.data = customer.description
     form.customer_sla.data = customer.sla
+    form.customer_callback_url.render_kw = {'value': customer.callback_url or ''}
 
     return render_template("modal_add_customer.html", form=form, customer=customer,
                            attributes=customer.custom_attributes)

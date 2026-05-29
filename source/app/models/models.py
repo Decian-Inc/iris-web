@@ -135,6 +135,7 @@ class Client(db.Model):
     name = Column(Text, unique=True)
     description = Column(Text)
     sla = Column(Text)
+    callback_url = Column(Text, nullable=True)
     creation_date = Column(DateTime, server_default=func.now(), nullable=True)
     created_by = Column(ForeignKey('user.id'), nullable=True)
     last_update_date = Column(DateTime, server_default=func.now(), nullable=True)

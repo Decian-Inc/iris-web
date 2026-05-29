@@ -1717,12 +1717,13 @@ class CustomerSchema(ma.SQLAlchemyAutoSchema):
     customer_name: str = auto_field('name', required=True, validate=Length(min=2), allow_none=False)
     customer_description: Optional[str] = auto_field('description', allow_none=True)
     customer_sla: Optional[str] = auto_field('sla', allow_none=True)
+    customer_callback_url: Optional[str] = auto_field('callback_url', allow_none=True)
     customer_id: int = auto_field('client_id')
 
     class Meta:
         model = Client
         load_instance = True
-        exclude = ['name', 'client_id', 'description', 'sla']
+        exclude = ['name', 'client_id', 'description', 'sla', 'callback_url']
         unknown = EXCLUDE
 
     @post_load

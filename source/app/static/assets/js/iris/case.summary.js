@@ -4,6 +4,25 @@ var buffer_dumped = false ;
 var last_applied_change = null ;
 var just_cleared_buffer = null ;
 var from_sync = null;
+var _customer_callback_url = null;
+
+function _apply_wazuh_callback(target) {
+    if (!_customer_callback_url) { return; }
+    $(target).find('a').each(function () {
+        var text = $(this).text().trim();
+        if (text === 'View in Wazuh' || text === 'View Message in Wazuh') {
+            var href = $(this).attr('href');
+            if (!href) { return; }
+            try {
+                var url = new URL(href);
+                var cb  = new URL(_customer_callback_url);
+                url.protocol = cb.protocol;
+                url.host     = cb.host;
+                $(this).attr('href', url.toString());
+            } catch (e) { /* malformed URL — leave unchanged */ }
+        }
+    });
+}
 
 var editor = ace.edit("editor_summary",
     {
@@ -585,12 +604,25 @@ $(document).ready(function() {
         let html = converter.makeHtml(do_md_filter_xss(editor.getSession().getValue()));
 
         target.innerHTML = do_md_filter_xss(html);
+        _apply_wazuh_callback(target);
 
     });
 
     edit_case_summary();
     body_loaded();
     sync_editor(true);
+
+    get_request_api('/case/meta')
+    .done(function (data) {
+        if (data.status === 'success' && data.data && data.data.client) {
+            var cb = data.data.client.customer_callback_url;
+            if (cb) {
+                _customer_callback_url = cb;
+                _apply_wazuh_callback(document.getElementById('targetDiv'));
+            }
+        }
+    });
+
     setInterval(auto_remove_typing, 2000);
 
     let review_state = $('#caseReviewState');

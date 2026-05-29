@@ -58,6 +58,7 @@ class AddCustomerForm(FlaskForm):
     customer_name = StringField(u'Customer name', validators=[DataRequired()])
     customer_description = TextAreaField(u'Customer description', validators=[DataRequired()])
     customer_sla = TextAreaField(u'Customer SLAs', validators=[DataRequired()])
+    customer_callback_url = StringField(u'Callback URL')
 
 
 class MultiCheckboxField(SelectMultipleField):
